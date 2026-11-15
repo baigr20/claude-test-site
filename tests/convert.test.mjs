@@ -223,7 +223,7 @@ test('published frontend does not call network or hidden account APIs', () => {
   }
   assert.equal(app.includes('/api/'), false)
 
-  assert.match(app, /from '\.\/converter\.js'/)
+  assert.match(app, /from '\.\/converter\.js(?:\?v=[0-9a-f]+)?'/)
   assert.doesNotMatch(app, /extractAdminAccountIds|buildAdminHealthRunnerScript/)
   assert.match(tool, /本地转换 · 不上传凭证/)
   assert.match(tool, /id="codexLoginDialog"/)

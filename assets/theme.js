@@ -1,5 +1,5 @@
 (() => {
-  const storageKey = 'nx-toolbox-theme';
+  const storageKey = 'nx-toolbox-theme-v2';
   const root = document.documentElement;
   const getPreferred = () => {
     const saved = localStorage.getItem(storageKey);

@@ -18,9 +18,9 @@ test('homepage and converter share the mint design tokens and chrome', () => {
   assert.match(site, /--sky:\s*#7eb8d4/)
   assert.match(site, /html\[data-theme="dark"\]\s*\{[^}]*--bg:\s*#15201c/s)
 
-  assert.match(home, /href="\/assets\/site\.css"/)
-  assert.match(page, /href="\/assets\/site\.css"/)
-  assert.match(page, /href="\.\/src\/styles\.css"/)
+  assert.match(home, /href="\/assets\/site\.css(?:\?v=[0-9a-f]+)?"/)
+  assert.match(page, /href="\/assets\/site\.css(?:\?v=[0-9a-f]+)?"/)
+  assert.match(page, /href="\.\/src\/styles\.css(?:\?v=[0-9a-f]+)?"/)
   assert.match(home, /class="site-header"/)
   assert.match(page, /class="site-header"/)
   assert.match(home, /class="site-footer"/)

@@ -5,14 +5,14 @@ import {
   convertInputToSub,
   inspectInputFormat,
   sliceSubPayload
-} from './converter.js'
+} from './converter.js?v=ce3b9bdc91'
 import {
   buildCodexAuthRequest,
   clearAllCodexPkce,
   readCodexCallbackError,
   readCodexCodeCallback,
   resolveCodexCodeCallbackInput
-} from './codex-oauth.js'
+} from './codex-oauth.js?v=4ac4a9f86a'
 
 const TARGETS = ['cpa', 'cockpit', 'sub']
 const TARGET_LABELS = {

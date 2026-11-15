@@ -96,8 +96,8 @@ test('original modal CSS keeps overlays invisible until .is-visible', () => {
   assert.match(toast, /opacity:\s*0/)
   assert.match(cssBlock('.toast.is-visible'), /opacity:\s*1/)
 
-  assert.match(html, /href="\/assets\/site\.css"/)
-  assert.match(html, /href="\.\/src\/styles\.css"/)
+  assert.match(html, /href="\/assets\/site\.css(?:\?v=[0-9a-f]+)?"/)
+  assert.match(html, /href="\.\/src\/styles\.css(?:\?v=[0-9a-f]+)?"/)
 
   // Every .modal rule that uses display:grid must stay invisible until .is-visible.
   const modalRules = [...css.matchAll(/(?:^|[\s}])(\.modal(?:\.is-visible)?)\s*\{([^}]*)\}/gm)]
