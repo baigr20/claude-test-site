@@ -24,7 +24,7 @@ node --test
 
 ## Git
 
-推送到 `origin/main` 后由 GitHub Pages 发布。
+本地提交 `2817745`。当前本机 GitHub 凭证是 baigr16，仓库属于 baigr20，`git push origin main` 返回 403。需要用 baigr20 或 GrokBot 推送后才会上线。
 
 线上地址：
 
