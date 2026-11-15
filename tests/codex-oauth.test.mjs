@@ -194,6 +194,6 @@ test('frontend only talks to official OAuth hosts for login, and still omits thi
   assert.match(files, /https:\/\/auth\.openai\.com\/oauth\/authorize/)
   assert.match(files, /https:\/\/auth\.openai\.com\/oauth\/token/)
   assert.doesNotMatch(readFileSync(path.join(root, 'sub-cpa/src/app.js'), 'utf8'), /looksLikeCodeOnlyCallback/)
-  assert.match(readFileSync(path.join(root, 'sub-cpa/index.html'), 'utf8'), /打开官方授权页/)
-  assert.match(readFileSync(path.join(root, 'sub-cpa/index.html'), 'utf8'), /本站没有登录表单/)
+  assert.match(readFileSync(path.join(root, 'sub-cpa/index.html'), 'utf8'), /打开授权/)
+  assert.match(readFileSync(path.join(root, 'sub-cpa/index.html'), 'utf8'), /本页只在浏览器本地生成授权链接，不上传 token/)
 })

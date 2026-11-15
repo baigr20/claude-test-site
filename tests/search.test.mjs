@@ -34,6 +34,6 @@ test('filter shows the card for Sub / CPA and hides it for zz-no-match', () => {
 
 test('CSS hidden attribute beats flex/grid display on cards', () => {
   const css = readFileSync(path.join(root, 'assets/site.css'), 'utf8')
-  assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/)
+  assert.match(css, /(?:^|[\s;}])\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/m)
   assert.match(css, /\.card\s*\{[^}]*display:\s*flex/s)
 })

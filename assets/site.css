@@ -1,4 +1,10 @@
 /* NX 工具箱 — original styles, not a clone of any third-party kit */
+
+/* [hidden] must win over later display:flex / display:grid rules such as .card */
+[hidden] {
+  display: none !important;
+}
+
 :root {
   color-scheme: light;
   --bg: #f4f1ea;
