@@ -20,6 +20,7 @@
         <span class="brand-text"><strong>NX 工具箱</strong><small>claude.nx.kg</small></span>
       </a>
       <div class="header-actions">
+        <button class="button" id="codexLogin" type="button">登录 Codex</button>
         <a class="button button--quiet" href="/">返回工具箱</a>
         <button class="icon-btn" id="themeToggle" type="button" onclick="toggleToolboxTheme()">◐</button>
       </div>
@@ -30,7 +31,7 @@
     <nav class="crumb" aria-label="面包屑"><a href="/">工具箱</a><span aria-hidden="true">/</span><span>Sub / CPA 互转</span></nav>
     <header class="tool-head">
       <h1>Sub / CPA 互转</h1>
-      <p>粘贴、上传或拖入 JSON / JSONL / 文本，选择输出为 CPA、Cockpit 或 SUB。所有转换都在当前浏览器完成，本页不会把输入发到服务器，也不提供登录或测活。</p>
+      <p>粘贴、上传或拖入 JSON / JSONL / 文本，选择输出为 CPA、Cockpit 或 SUB。格式转换在当前浏览器完成。登录 Codex 会跳转到 OpenAI 官方授权页；授权后请把回调链接粘贴回来，本页只向官方 token 接口换票，不会把凭证发给其他服务，也不提供测活。</p>
       <div class="pill-row">
         <span class="pill">本地处理，不上传凭证</span>
         <span class="pill">纯静态页面</span>
@@ -95,17 +96,18 @@
           <li>CPA / Codex JSON 或 JSONL</li>
           <li>GPT Session / AT JSON（需带 <code>user</code> 对象）</li>
           <li>带 <code>refresh_token</code> / <code>rt</code> 或访问令牌的授权回调链接</li>
+          <li>登录 Codex 后地址栏里的官方授权回调（含 <code>code</code> 与 <code>state</code>）</li>
           <li>以上格式的混合内容</li>
         </ul>
       </article>
       <article class="note">
         <h2>本页明确不支持</h2>
         <ul>
-          <li>登录 Codex / GPT，或把授权 <code>code</code> 换成刷新令牌</li>
-          <li>账号测活、下单查询、在线聊天或把凭证发到第三方接口</li>
-          <li>私有工作台、账号库和服务器端保存</li>
+          <li>在本站输入账号密码。登录只会打开 OpenAI 官方授权页</li>
+          <li>账号测活、下单查询、在线聊天，或把凭证发到非官方第三方接口</li>
+          <li>私有工作台、账号库和服务器端保存。令牌只留在当前页面内存中，可随时清空</li>
         </ul>
-        <p>示例数据是虚构的，不能用来登录任何真实服务。</p>
+        <p>示例数据是虚构的，不能用来登录任何真实服务。Codex 登录需要你把官方回调地址粘贴回来，本页不会代替你完成本机 localhost 监听。</p>
       </article>
     </section>
   </main>
@@ -122,6 +124,31 @@
       <p>文件只会在本地读取。</p>
     </div>
   </div>
+
+  <div id="codexLoginDialog" class="modal" hidden>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="codexLoginTitle">
+      <div>
+        <span class="kicker">OpenAI 官方授权</span>
+        <h2 id="codexLoginTitle">登录 Codex</h2>
+        <p>本站没有登录表单，也不会请你在这里输入账号或密码。点击“打开官方授权页”会前往 <strong>auth.openai.com</strong>。授权完成后，浏览器通常会跳到 <code>http://localhost:1455/auth/callback</code>；这个地址在本机往往打不开，这是正常的。请复制地址栏中的完整链接，粘贴到转换页左侧输入框，本页会用 PKCE 向官方 token 接口换取刷新令牌，并把结果转成 CPA / Cockpit / SUB。</p>
+        <p>回调链接和令牌不会写进地址栏或发送给其他网站。code_verifier 只暂存在当前浏览器，用于核对 state 并完成这一次换票，清空页面即可删除。</p>
+      </div>
+      <label class="modal-field">
+        <span>官方授权链接</span>
+        <textarea id="codexAuthUrl" class="modal__textarea" readonly spellcheck="false"></textarea>
+      </label>
+      <label class="modal-field">
+        <span>code_verifier（换票时自动使用，也可自行备份）</span>
+        <input id="codexCodeVerifier" readonly />
+      </label>
+      <div class="modal-actions">
+        <button id="closeCodexLogin" class="button button--quiet" type="button">关闭</button>
+        <button id="copyCodexAuthUrl" class="button button--quiet" type="button">复制链接</button>
+        <button id="openCodexAuthUrl" class="button button--solid" type="button">打开官方授权页</button>
+      </div>
+    </section>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="./src/app.js"></script>
 </body>

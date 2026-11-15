@@ -5,6 +5,13 @@ import {
   convertInputToSub,
   inspectInputFormat
 } from './converter.js'
+import {
+  buildCodexAuthRequest,
+  clearAllCodexPkce,
+  readCodexCallbackError,
+  readCodexCodeCallback,
+  resolveCodexCodeCallbackInput
+} from './codex-oauth.js'
 
 const TARGETS = ['cpa', 'cockpit', 'sub']
 const TARGET_LABELS = {
@@ -23,7 +30,18 @@ const el = (id) => document.getElementById(id)
 const state = {
   target: 'sub',
   lastResult: null,
-  lastError: ''
+  lastError: '',
+  codexAuth: { url: '', codeVerifier: '', oauthState: '' },
+  lastCodexCodeExchange: { key: '', input: '' }
+}
+
+function oauthOptions() {
+  return {
+    currentState: state.codexAuth.oauthState,
+    currentVerifier: state.codexAuth.codeVerifier,
+    storage: globalThis.localStorage,
+    cache: state.lastCodexCodeExchange
+  }
 }
 
 function encodeJwt(payload) {
@@ -61,13 +79,6 @@ function buildDemoBundle() {
   }
 }
 
-function looksLikeCodeOnlyCallback(text) {
-  const value = String(text || '')
-  const hasCode = /(?:^|[?&#])code=/.test(value)
-  const hasRefresh = /(?:refresh_token|refreshToken|rt)=/.test(value)
-  const hasAccess = /(?:access_token|accessToken)=/.test(value)
-  return hasCode && !hasRefresh && !hasAccess
-}
 
 function setTarget(target, { convert = true } = {}) {
   state.target = TARGETS.includes(target) ? target : 'sub'
@@ -90,17 +101,35 @@ function convertIfInput() {
     resetStatus('待转换')
     return
   }
-  convertCurrent()
+  void convertCurrent()
+}
+
+async function prepareConversionInput(text) {
+  const authError = readCodexCallbackError(text)
+  if (authError) throw new Error(authError)
+  if (readCodexCodeCallback(text)) {
+    el('statStatus').textContent = '正在向官方接口换票'
+    return resolveCodexCodeCallbackInput(text, oauthOptions())
+  }
+  return text
 }
 
 function inspectOrExplain(text) {
-  if (looksLikeCodeOnlyCallback(text)) {
-    throw new Error('检测到授权回调里只有 code，没有 refresh_token / rt。本页是纯本地转换，不会向授权服务器换票。请粘贴已包含刷新令牌或访问令牌的内容。')
+  if (readCodexCallbackError(text)) {
+    throw new Error(readCodexCallbackError(text))
+  }
+  if (readCodexCodeCallback(text)) {
+    return {
+      kind: 'codex_oauth_callback',
+      label: 'Codex 官方授权回调',
+      count: 1,
+      missingRefreshToken: 0
+    }
   }
   return inspectInputFormat(text)
 }
 
-function convertCurrent() {
+async function convertCurrent() {
   const text = el('sourceText').value.trim()
   if (!text) {
     showToast('请先粘贴或上传内容')
@@ -108,8 +137,11 @@ function convertCurrent() {
     return
   }
   try {
-    inspectOrExplain(text)
-    const result = buildResult(text, state.target)
+    const prepared = await prepareConversionInput(text)
+    if (prepared !== text && readCodexCodeCallback(text)) {
+      el('sourceText').value = prepared
+    }
+    const result = buildResult(prepared, state.target)
     state.lastResult = result
     state.lastError = ''
     el('outputText').value = result.output
@@ -141,7 +173,11 @@ function checkCurrentFormat() {
       format: TARGET_FORMAT[state.target]
     }, `已识别：${inspection.label}`)
     showWarnings([])
-    showToast(`已识别为 ${inspection.label}，共 ${inspection.count} 条`)
+    if (inspection.kind === 'codex_oauth_callback') {
+      showToast('已识别为官方授权回调。点击“转换”后，本页会向 OpenAI 官方 token 接口换票，不会把链接发给其他服务。')
+    } else {
+      showToast(`已识别为 ${inspection.label}，共 ${inspection.count} 条`)
+    }
   } catch (error) {
     applyMeta({ count: 0, missingRefreshToken: 0, format: TARGET_FORMAT[state.target] }, '无法识别')
     el('outputText').value = error.message || String(error)
@@ -200,7 +236,79 @@ function pasteDemo() {
 function clearAll() {
   el('sourceText').value = ''
   el('fileInput').value = ''
+  state.codexAuth = { url: '', codeVerifier: '', oauthState: '' }
+  state.lastCodexCodeExchange = { key: '', input: '' }
+  if (el('codexAuthUrl')) el('codexAuthUrl').value = ''
+  if (el('codexCodeVerifier')) el('codexCodeVerifier').value = ''
+  clearAllCodexPkce(globalThis.localStorage)
+  closeCodexLoginDialog()
   resetStatus('待转换')
+}
+
+async function startCodexLogin() {
+  const pendingWindow = window.open('about:blank', '_blank')
+  if (pendingWindow) pendingWindow.opener = null
+  try {
+    const authRequest = await buildCodexAuthRequest()
+    state.codexAuth = authRequest
+    el('codexAuthUrl').value = authRequest.url
+    el('codexCodeVerifier').value = authRequest.codeVerifier
+    openCodexLoginDialog()
+    openOfficialAuthUrl(authRequest.url, pendingWindow)
+  } catch (error) {
+    if (pendingWindow && !pendingWindow.closed) pendingWindow.close()
+    showToast(error.message || '授权链接生成失败')
+  }
+}
+
+function openCodexLoginDialog() {
+  const dialog = el('codexLoginDialog')
+  if (!dialog) return
+  dialog.hidden = false
+  dialog.setAttribute('aria-hidden', 'false')
+}
+
+function closeCodexLoginDialog() {
+  const dialog = el('codexLoginDialog')
+  if (!dialog) return
+  dialog.hidden = true
+  dialog.setAttribute('aria-hidden', 'true')
+}
+
+async function copyCodexAuthUrl() {
+  if (!state.codexAuth.url) {
+    showToast('请先生成授权链接')
+    return
+  }
+  await navigator.clipboard.writeText(state.codexAuth.url)
+  showToast('已复制官方授权链接')
+}
+
+function openCodexAuthUrl() {
+  if (!state.codexAuth.url) {
+    startCodexLogin()
+    return
+  }
+  openOfficialAuthUrl(state.codexAuth.url)
+}
+
+function openOfficialAuthUrl(url, pendingWindow = null) {
+  if (!url.startsWith('https://auth.openai.com/')) {
+    showToast('授权链接不是 OpenAI 官方地址，已取消打开')
+    if (pendingWindow && !pendingWindow.closed) pendingWindow.close()
+    return
+  }
+  if (pendingWindow && !pendingWindow.closed) {
+    pendingWindow.location.replace(url)
+    showToast('已打开 OpenAI 官方授权页')
+    return
+  }
+  const opened = window.open(url, '_blank', 'noopener,noreferrer')
+  if (!opened) {
+    showToast('浏览器拦截了新标签，请复制授权链接后手动打开官方页面')
+    return
+  }
+  showToast('已打开 OpenAI 官方授权页')
 }
 
 async function readFile(file) {
@@ -286,6 +394,16 @@ function bindDrop() {
   })
 }
 
+el('codexLogin')?.addEventListener('click', () => { void startCodexLogin() })
+el('closeCodexLogin')?.addEventListener('click', closeCodexLoginDialog)
+el('copyCodexAuthUrl')?.addEventListener('click', () => { void copyCodexAuthUrl() })
+el('openCodexAuthUrl')?.addEventListener('click', openCodexAuthUrl)
+el('codexLoginDialog')?.addEventListener('click', (event) => {
+  if (event.target === el('codexLoginDialog')) closeCodexLoginDialog()
+})
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeCodexLoginDialog()
+})
 el('targetCpa').addEventListener('click', () => setTarget('cpa'))
 el('targetCockpit').addEventListener('click', () => setTarget('cockpit'))
 el('targetSub').addEventListener('click', () => setTarget('sub'))
