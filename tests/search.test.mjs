@@ -15,7 +15,7 @@ const cards = [
   {
     id: '2fa',
     category: 'security',
-    searchText: '2fa totp otp otpauth 动态验证码 验证码 安全 base32 密钥 authenticator 动态验证码（TOTP） 在浏览器本地'
+    searchText: '2fa totp otp otpauth 动态验证码 验证码 安全 base32 密钥 authenticator 2FA 动态验证码 在浏览器本地'
   }
 ]
 
