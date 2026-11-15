@@ -54,8 +54,12 @@ test('theme defaults to light unless the user saved a choice', () => {
 
 test('homepage lists both tools and a clearly labeled shop friend link', () => {
   assert.match(home, /href="\/2fa\/"/)
+  assert.match(home, /href="\/subscription\/"/)
   assert.match(home, /data-category="security"/)
+  assert.match(home, /data-category="query"/)
   assert.match(home, /data-filter="security"/)
+  assert.match(home, /data-filter="query"/)
+  assert.match(home, /现有 3 个工具/)
   assert.match(home, /友情链接 · AI 服务店铺/)
   assert.match(home, /Plus 充值 · Gemini 等服务/)
   assert.match(home, /优惠服务，具体价格与规则以店铺为准/)

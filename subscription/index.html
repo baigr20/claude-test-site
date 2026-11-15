@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="在浏览器里查询 ChatGPT 套餐、登录保护和会话有效期。会话不会上传到本站。">
+    <title>ChatGPT 订阅查询｜NX 工具箱</title>
+    <meta name="theme-color" content="#3aa888">
+    <link rel="icon" href="/assets/favicon.svg?v=9ff6e7de59" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/site.css?v=6f15b54602">
+    <link rel="stylesheet" href="./src/styles.css?v=1ef3de4a7c">
+    <meta name="referrer" content="no-referrer">
+    <script src="/assets/theme.js?v=097d068ec0"></script>
+</head>
+<body>
+    <a class="skip" href="#main">跳到内容</a>
+    <header class="site-header">
+        <div class="wrap header-row">
+            <a class="brand" href="/">
+                <span class="mark" aria-hidden="true">NX</span>
+                <span class="brand-text"><strong>NX 工具箱</strong><small>claude.nx.kg</small></span>
+            </a>
+            <div class="header-actions">
+                <button class="icon-btn" id="themeToggle" type="button" onclick="toggleToolboxTheme()">◐</button>
+            </div>
+        </div>
+    </header>
+
+    <header class="site-bar">
+        <a class="brand" href="/subscription/" aria-label="订阅查询">
+            <span class="brand-mark" aria-hidden="true">镜</span>
+            <span><strong>镜花水月</strong><small>ChatGPT Subscription</small></span>
+        </a>
+        <div id="service-status" class="public-badge service-status checking" role="status" aria-live="polite" aria-label="正在确认查询方式">
+            <span aria-hidden="true"></span><b>浏览器本地查询</b>
+        </div>
+    </header>
+
+    <main id="main" class="query-shell">
+        <section class="intro-panel" aria-labelledby="page-title">
+            <div class="eyebrow">以会话为引 · 照见订阅全貌</div>
+            <h1 id="page-title">一镜照见<br><em>你的订阅全貌</em></h1>
+            <p>套餐、额度、到期和续费，一次查询便清清楚楚。会话只在当前浏览器里使用。</p>
+            <div class="trust-list" aria-label="查询内容">
+                <div><span aria-hidden="true">一</span><strong>套餐全貌</strong><small>当前方案与会话信息</small></div>
+                <div><span aria-hidden="true">览</span><strong>余量清晰</strong><small>能确认时显示 Codex 额度</small></div>
+                <div><span aria-hidden="true">明</span><strong>续费有数</strong><small>官方账单入口</small></div>
+            </div>
+        </section>
+
+        <section class="query-card" aria-labelledby="query-title">
+            <div class="step-heading">
+                <span>01</span>
+                <div>
+                    <p>开启水镜</p>
+                    <h2 id="query-title">粘贴会话数据</h2>
+                </div>
+            </div>
+
+            <p class="query-help">登录自己的 ChatGPT 后打开 <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noreferrer">会话数据页面 ↗</a>，粘贴完整内容，或只保留 accessToken、sessionToken 的精简 JSON。无需复制营销、统计等附加字段。</p>
+
+            <label class="session-field" for="session-json">
+                <span>会话数据</span>
+                <textarea id="session-json" spellcheck="false" autocomplete="off" placeholder='支持完整 Session，或 {"accessToken":"...","sessionToken":"..."} 精简格式' rows="8"></textarea>
+            </label>
+
+            <div id="input-status" class="input-status" aria-live="polite"></div>
+
+            <div class="query-actions">
+                <button id="clear-button" class="button button-ghost" type="button">清空</button>
+                <button id="query-button" class="button button-primary" type="button">
+                    <span>照见我的订阅</span><b aria-hidden="true">→</b>
+                </button>
+            </div>
+
+            <div class="privacy-line"><span aria-hidden="true">●</span> 会话只在当前浏览器内存中解析，查询完成后自动清空，不会上传到本站服务器。</div>
+        </section>
+    </main>
+
+    <section class="source-strip" aria-label="可以查询的内容">
+        <div><span class="source-icon source-openai">01</span><p><strong>套餐与有效期</strong><small>从会话中确认当前方案</small></p></div>
+        <div><span class="source-icon source-apple">02</span><p><strong>续费与账单</strong><small>跳转官方账单页处理</small></p></div>
+        <div><span class="source-icon source-google">03</span><p><strong>额度与恢复时间</strong><small>浏览器能连上时再核对余量</small></p></div>
+    </section>
+
+    <footer class="site-footer">
+        <div class="wrap">
+            <p>NX 工具箱是独立的实用页面，不是 OpenAI 或 checkgpt.plus 的官方站点。</p>
+            <p>订阅查询在浏览器本地完成。请不要把 Session 发给别人或未知网站。</p>
+        </div>
+    </footer>
+    <script type="module" src="./src/app.js?v=1b3ba437cf"></script>
+</body>
+</html>

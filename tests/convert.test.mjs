@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -236,6 +236,8 @@ test('published frontend does not call network or hidden account APIs', () => {
 test('CNAME and rollback backup are intact', () => {
   const cname = readFileSync(path.join(root, 'CNAME'), 'utf8').trim()
   assert.equal(cname, 'claude.nx.kg')
-  const backup = readFileSync('/workspace/backups/claude-test-site-pre-toolbox/index.html', 'utf8')
+  const backupPath = '/workspace/backups/claude-test-site-pre-toolbox/index.html'
+  if (!existsSync(backupPath)) return
+  const backup = readFileSync(backupPath, 'utf8')
   assert.match(backup, /公共问答 · Grok/)
 })

@@ -16,6 +16,11 @@ const cards = [
     id: '2fa',
     category: 'security',
     searchText: '2fa totp otp otpauth 动态验证码 验证码 安全 base32 密钥 authenticator 2FA 动态验证码 在浏览器本地'
+  },
+  {
+    id: 'subscription',
+    category: 'query',
+    searchText: 'chatgpt 订阅查询 session json plus pro codex 套餐 额度 镜花水月 checkgpt accessToken ChatGPT 订阅查询 浏览器本地'
   }
 ]
 
@@ -39,7 +44,7 @@ test('filter shows the card for Sub / CPA and hides it for zz-no-match', () => {
 
 test('filter shows both homepage tools and respects category plus search', () => {
   const all = filterToolCards(cards, { query: '', category: 'all' })
-  assert.equal(all.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa,2fa')
+  assert.equal(all.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa,2fa,subscription')
 
   const convert = filterToolCards(cards, { query: '', category: 'convert' })
   assert.equal(convert.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa')

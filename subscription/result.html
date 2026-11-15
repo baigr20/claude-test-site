@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="查看 ChatGPT 套餐、到期时间、剩余额度和自动续费状态。">
+    <title>订阅全貌｜NX 工具箱</title>
+    <meta name="theme-color" content="#3aa888">
+    <link rel="icon" href="/assets/favicon.svg?v=9ff6e7de59" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/site.css?v=6f15b54602">
+    <link rel="stylesheet" href="./src/styles.css?v=1ef3de4a7c">
+    <meta name="referrer" content="no-referrer">
+    <script src="/assets/theme.js?v=097d068ec0"></script>
+</head>
+<body class="result-page">
+    <a class="skip" href="#main">跳到内容</a>
+    <header class="site-header">
+        <div class="wrap header-row">
+            <a class="brand" href="/">
+                <span class="mark" aria-hidden="true">NX</span>
+                <span class="brand-text"><strong>NX 工具箱</strong><small>claude.nx.kg</small></span>
+            </a>
+            <div class="header-actions">
+                <button class="icon-btn" id="themeToggle" type="button" onclick="toggleToolboxTheme()">◐</button>
+            </div>
+        </div>
+    </header>
+
+    <header class="site-bar">
+        <a class="brand" href="/subscription/" onclick="returnToQuery(); return false" aria-label="订阅查询">
+            <span class="brand-mark" aria-hidden="true">镜</span>
+            <span><strong>镜花水月</strong><small>ChatGPT Subscription</small></span>
+        </a>
+        <button type="button" class="result-back" onclick="returnToQuery()">← 查询另一个账号</button>
+    </header>
+
+    <main id="main" class="result-shell">
+        <header class="result-intro">
+            <div>
+                <span class="eyebrow">水镜已映</span>
+                <h1>你的订阅全貌</h1>
+                <p>套餐、额度、到期时间和续费状态已经整理完成。</p>
+            </div>
+            <div class="result-safety"><span>✓</span> 本次结果 15 分钟后自动清除</div>
+        </header>
+
+        <div id="result-container" aria-live="polite">
+            <div class="result-loading-card">
+                <span class="query-spinner" aria-hidden="true"></span>
+                <div><strong>正在映照订阅信息</strong><p>马上就好</p></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-title" style="display:none">
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-content" tabindex="-1">
+            <div class="modal-header">
+                <h2 id="modal-title"></h2>
+                <button onclick="closeModal()" class="close-btn" aria-label="关闭">&times;</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" style="display:none"></div>
+    <script src="./src/result.js?v=b1df91eca9"></script>
+</body>
+</html>
