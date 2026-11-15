@@ -34,6 +34,10 @@ test('filter shows the card for Sub / CPA and hides it for zz-no-match', () => {
 
 test('CSS hidden attribute beats flex/grid display on cards', () => {
   const css = readFileSync(path.join(root, 'assets/site.css'), 'utf8')
-  assert.match(css, /(?:^|[\s;}])\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/m)
+  const hidden = css.match(/(?:^|[\s;}])\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/m)
+  assert.ok(hidden, 'expected a standalone [hidden] { display: none !important } rule')
   assert.match(css, /\.card\s*\{[^}]*display:\s*flex/s)
+  const hiddenAt = css.search(/(?:^|[\s;}])\[hidden\]\s*\{/m)
+  const cardAt = css.search(/\.card\s*\{/)
+  assert.ok(hiddenAt >= 0 && hiddenAt < cardAt, '[hidden] must be defined before .card so later display:flex cannot un-hide it without !important')
 })

@@ -5,18 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sub / CPA 在线互转</title>
     <meta name="description" content="在浏览器本地将 Sub2API、CPA/Codex 与 GPT Session 互转。不上传凭证。" />
+    <meta name="theme-color" content="#3aa888" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/site.css" />
     <link rel="stylesheet" href="./src/styles.css" />
     <meta name="referrer" content="no-referrer" />
+    <script src="/assets/theme.js"></script>
   </head>
   <body data-private-tools="false">
-    <div class="toolbox-entry">
-      <a href="/">← 返回 NX 工具箱</a>
-      <span>claude.nx.kg</span>
-    </div>
-    <main class="app-shell">
+    <a class="skip" href="#main">跳到内容</a>
+    <header class="site-header">
+      <div class="wrap header-row">
+        <a class="brand" href="/">
+          <span class="mark" aria-hidden="true">NX</span>
+          <span class="brand-text"><strong>NX 工具箱</strong><small>claude.nx.kg</small></span>
+        </a>
+        <div class="header-actions">
+          <button class="icon-btn" id="themeToggle" type="button" onclick="toggleToolboxTheme()">◐</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="app-shell wrap">
       <header class="topbar">
-        <div class="brand">
+        <div class="tool-intro">
           <span>本地转换 · 不上传凭证</span>
           <h1>Sub / CPA 互转</h1>
           <p>粘贴或拖入 JSON，选择输出目标：CPA、Cockpit 或 SUB。所有转换在当前浏览器完成。</p>
@@ -105,6 +117,13 @@
         </div>
       </footer>
     </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>NX 工具箱是独立的实用页面，不是 Anthropic、OpenAI 或其他模型厂商的官方站点。</p>
+        <p>工具在浏览器本地运行。请不要把真实生产凭证发到不信任的环境；本页也不提供测活或代发请求。</p>
+      </div>
+    </footer>
 
     <div id="dropOverlay" class="drop-overlay" aria-hidden="true">
       <div>

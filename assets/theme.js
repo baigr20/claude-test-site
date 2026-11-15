@@ -4,7 +4,7 @@
   const getPreferred = () => {
     const saved = localStorage.getItem(storageKey);
     if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'light';
   };
   const apply = (theme) => {
     root.dataset.theme = theme;

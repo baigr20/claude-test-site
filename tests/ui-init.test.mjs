@@ -6,7 +6,10 @@ import test from 'node:test'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const html = readFileSync(path.join(root, 'sub-cpa/index.html'), 'utf8')
-const css = readFileSync(path.join(root, 'sub-cpa/src/styles.css'), 'utf8')
+const css = [
+  readFileSync(path.join(root, 'assets/site.css'), 'utf8'),
+  readFileSync(path.join(root, 'sub-cpa/src/styles.css'), 'utf8')
+].join('\n')
 const app = readFileSync(path.join(root, 'sub-cpa/src/app.js'), 'utf8')
 
 function markupOf(id) {
@@ -93,9 +96,24 @@ test('original modal CSS keeps overlays invisible until .is-visible', () => {
   assert.match(toast, /opacity:\s*0/)
   assert.match(cssBlock('.toast.is-visible'), /opacity:\s*1/)
 
-  // The tool page must not depend on the toolbox [hidden] fix for these overlays.
-  assert.doesNotMatch(html, /assets\/site\.css/)
+  assert.match(html, /href="\/assets\/site\.css"/)
   assert.match(html, /href="\.\/src\/styles\.css"/)
+
+  // Every .modal rule that uses display:grid must stay invisible until .is-visible.
+  const modalRules = [...css.matchAll(/(?:^|[\s}])(\.modal(?:\.is-visible)?)\s*\{([^}]*)\}/gm)]
+  assert.ok(modalRules.length >= 2, 'expected base and visible modal rules')
+  for (const match of modalRules) {
+    const selector = match[1]
+    const body = match[2]
+    if (selector === '.modal' && /display:\s*grid/.test(body)) {
+      assert.match(body, /opacity:\s*0/)
+      assert.match(body, /pointer-events:\s*none/)
+    }
+    if (selector === '.modal.is-visible') {
+      assert.match(body, /opacity:\s*1/)
+      assert.match(body, /pointer-events:\s*auto/)
+    }
+  }
 })
 
 test('authorization starts only from the Codex login click, never on module load', () => {
