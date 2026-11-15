@@ -5,7 +5,7 @@ GitHub Pages 站点，域名仍是 `claude.nx.kg`。原先的公共聊天首页�
 - 首页：`/`
 - 转换工具：`/sub-cpa/`，交互和布局沿用原转换页。首次打开就是转换界面；只有点击「Codex 登录」才会打开授权弹窗并前往官方授权页。
 - 2FA 动态验证码：`/2fa/`，在浏览器本地根据 Base32 或 otpauth:// 生成 TOTP，密钥不上传、不保存。
-- ChatGPT 订阅查询：`/subscription/`，镜花水月布局。粘贴 `chatgpt.com/api/auth/session` JSON，在浏览器里解析套餐和登录保护；会话不上传本站。取消续费跳转官方账单页。
+- ChatGPT 订阅查询：`/subscription/`，镜花水月布局。粘贴 `chatgpt.com/api/auth/session` JSON。若部署了同源 Cloudflare Worker，会向 ChatGPT 拉取手机号、额度和历史订单；否则只在浏览器解析会话，跨域拦截的字段会标明「没有返回」。取消续费跳转官方账单页。 Worker 源码在 `backend/subscription-worker.mjs`。
 - 转换在当前浏览器完成，不把凭证上传到本站。
 - Codex 登录使用官方 OAuth / PKCE。授权后若跳到 `localhost:1455`，把地址栏里的回调链接粘贴回本页即可向官方 token 接口换票。
 - 未移植已失效或依赖后端的能力：协议登录、测活、工作台。

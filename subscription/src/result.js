@@ -2,6 +2,7 @@ let currentActionToken = null;
 let currentSubscription = null;
 let currentAccountDiagnostics = null;
 let currentMobileBilling = { status: 'unavailable', records: [] };
+let currentQueryMode = 'browser-session';
 let busy = false;
 let lastFocusedElement = null;
 let expiryTimer = null;
@@ -51,6 +52,7 @@ function initializeResultPage() {
     currentSubscription = transfer.subscription;
     currentAccountDiagnostics = transfer.accountDiagnostics || null;
     currentMobileBilling = transfer.mobileBilling || { status: 'unavailable', records: [] };
+    currentQueryMode = transfer.queryMode || 'browser-session';
     expiryTimer = window.setTimeout(expireCurrentResult, Math.max(0, transfer.createdAt + RESULT_LIFETIME_MS - Date.now()));
     renderSubscription();
 }
@@ -174,6 +176,8 @@ function renderSubscription() {
     const days = remainingDays(subscription.expireTime);
     const mobile = [2, 3].includes(subscription.payChannelType);
     const mobileRecords = Array.isArray(currentMobileBilling?.records) ? currentMobileBilling.records : [];
+    const webInvoices = Array.isArray(diagnostics.webInvoices) ? diagnostics.webInvoices : [];
+    const orderRecords = [...webInvoices, ...mobileRecords];
     const mobileStatus = mobileStatusPresentation(currentMobileBilling);
     const currencyText = billingCurrencyText(subscription);
     const active = subscription.state === 'active';
@@ -260,7 +264,7 @@ function renderSubscription() {
                     <p class="summary-account">${esc(displayEmail || displayName)}</p>
                     <h2 id="summary-title">${esc(summaryTitle)}</h2>
                     <p class="summary-sentence">${esc(summaryText)}</p>
-                    ${displayPhone ? `<p class="summary-phone">绑定手机号：${esc(displayPhone)}</p>` : ''}
+                    <p class="summary-phone">绑定手机号：${esc(displayPhone || '本次未从接口取到')}</p>
                     <div class="summary-actions">
                         <button type="button" data-result-action="billing-link" class="action-btn billing">${esc(billingButtonLabel)}</button>
                         ${cancelAction}
@@ -269,6 +273,8 @@ function renderSubscription() {
                 <dl class="summary-facts">
                     <div><dt>${paused ? knownPausedPlan ? '原会员套餐' : '会员状态' : '当前套餐'}</dt><dd>${esc(currentPlan)}</dd></div>
                     <div><dt>${paused ? '原有效期' : '到期时间'}</dt><dd>${esc(formatDateTime(subscription.expireTime))}</dd></div>
+                    <div><dt>会话有效期</dt><dd>${esc(formatDateTime(session.expiresAt))}</dd></div>
+                    <div><dt>账号创建</dt><dd>${esc(formatDateTime(subscription.createdAt || subscription.startTime))}</dd></div>
                     <div><dt>自动续费</dt><dd>${esc(renewal.label)}</dd></div>
                     <div><dt>支付渠道</dt><dd>${esc(channelLabel)}</dd></div>
                 </dl>
@@ -284,6 +290,8 @@ function renderSubscription() {
                 <dl class="receipt-grid">
                     <div><dt>订阅开始</dt><dd>${esc(formatDateTime(subscription.startTime))}</dd></div>
                     <div><dt>到期时间</dt><dd>${esc(formatDateTime(subscription.expireTime))}</dd></div>
+                    <div><dt>会话有效期</dt><dd>${esc(formatDateTime(session.expiresAt))}</dd></div>
+                    <div><dt>账号创建</dt><dd>${esc(formatDateTime(subscription.createdAt || subscription.startTime))}</dd></div>
                     ${paused && Number.isFinite(Date.parse(subscription.gracePeriodEndTime)) ? `<div><dt>宽限截止（记录）</dt><dd>${esc(formatDateTime(subscription.gracePeriodEndTime))}</dd></div>` : ''}
                     <div><dt>自动续费</dt><dd>${esc(renewal.label)}</dd></div>
                     <div><dt>付费周期</dt><dd>${subscription.paymentCycle === 'monthly' ? '按月' : subscription.paymentCycle === 'yearly' ? '按年' : '—'}</dd></div>
@@ -299,6 +307,15 @@ function renderSubscription() {
 
             ${mobileSection}
 
+            <section class="report-section billing-report" aria-labelledby="orders-title">
+                ${reportSectionHeading('04', '历史订单', '网页账单、App Store 或 Google Play 记录，能查到的会列在这里。', 'orders-title')}
+                ${orderRecords.length
+                    ? `<div class="mobile-list">${orderRecords.map(renderMobileRecord).join('')}</div>`
+                    : `<div class="mobile-empty"><strong>本次没有查到历史订单</strong><p>${esc(emptyOrderReason(diagnostics, currentQueryMode))}</p></div>`}
+            </section>
+
+            ${renderDataSource(diagnostics, currentQueryMode)}
+
             <details class="customer-disclosure">
                 <summary><span>查看更多账号信息</span><small>登录保护和可用模型</small></summary>
                 <div class="protection-model-grid">
@@ -310,8 +327,8 @@ function renderSubscription() {
             <details class="query-notes">
                 <summary>查询说明与隐私</summary>
                 <div>
-                    <p>这是 NX 工具箱里的浏览器查询页。会话数据只在当前浏览器内存中短暂使用，刷新、返回、关闭页面或超过 15 分钟后自动清除，不会上传到本站。</p>
-                    <p>页面只展示本次能够确认的信息；暂时查不到的项目不会根据套餐名称猜测。</p>
+                    <p>这是 NX 工具箱里的订阅查询页。同源代理可用时，会向 ChatGPT 拉取手机号、额度和账单；代理只在内存中使用会话，不落盘。没有代理时，只在当前浏览器解析，跨域拦截会导致这些字段为空。</p>
+                    <p>空白项是接口没有返回，不是页面藏起来。到期时间是订阅周期，会话有效期是 accessToken / session 过期时间，两者不是同一件事。</p>
                     <p>Apple App Store 和 Google Play 的具体扣款、退款与发票由原支付平台管理。</p>
                 </div>
             </details>
@@ -320,6 +337,56 @@ function renderSubscription() {
 
 function reportSectionHeading(number, title, detail, id) {
     return `<header class="report-section-heading"><span>${esc(number)}</span><div><h2 id="${esc(id)}">${esc(title)}</h2><p>${esc(detail)}</p></div></header>`;
+}
+
+function sourceStatusLabel(status) {
+    if (status === 'ok') return '已返回';
+    if (status === 'cors') return '浏览器跨域拦截，没有返回';
+    if (status === 'auth') return '鉴权失败，没有返回';
+    if (status === 'http') return '接口报错，没有返回';
+    if (status === 'error') return '请求失败，没有返回';
+    if (status === 'missing') return '本次没有请求或没有返回';
+    return '没有返回';
+}
+
+function queryModeLabel(mode) {
+    if (mode === 'proxy') return '同源代理向 ChatGPT 查询';
+    if (mode === 'browser-live') return '浏览器直连 chatgpt.com';
+    if (mode === 'local') return '本地服务向 ChatGPT 查询';
+    return '仅解析会话 JSON / JWT';
+}
+
+function emptyOrderReason(diagnostics, queryMode) {
+    const invoices = diagnostics?.sources?.invoices;
+    if (queryMode === 'proxy' && invoices === 'ok') {
+        return '接口已返回，但这个账号没有网页或移动端订单。';
+    }
+    if (invoices === 'cors' || queryMode === 'browser-session') {
+        return '历史订单需要账单接口。当前没有同源代理时，浏览器跨域读不到 chatgpt.com，所以这里是空的。点上方「查看历史账单」打开官方入口。';
+    }
+    return '网页订阅的发票在官方账单页；Apple / Google 订单在原商店。点上方「查看历史账单」打开官方入口。';
+}
+
+function renderDataSource(diagnostics, queryMode) {
+    const sources = diagnostics?.sources || {};
+    const fields = diagnostics?.fieldAvailability || {};
+    const phone = String(diagnostics?.profile?.phone || '').trim();
+    const rows = [
+        ['查询方式', queryModeLabel(queryMode)],
+        ['/backend-api/me（手机号）', sourceStatusLabel(sources.me)],
+        ['/backend-api/payments/invoices（历史订单）', sourceStatusLabel(sources.invoices)],
+        ['/backend-api/subscriptions（到期时间）', sourceStatusLabel(sources.subscriptions)],
+        ['/backend-api/wham/usage（额度）', sourceStatusLabel(sources.usage)],
+        ['绑定手机号', phone ? '已返回' : '接口没有返回，不是页面隐藏'],
+        ['订阅到期时间', fields.expireTime ? '已返回账单周期' : '没有账单到期时间；下方会话有效期是 token 过期，不是套餐到期'],
+        ['账号创建 / 会话有效期', fields.createdAt || fields.sessionExpires ? '来自会话 JSON 或账号接口' : '会话里也没有这些时间']
+    ];
+    return `<section class="report-section data-source-report" aria-labelledby="source-title">
+        ${reportSectionHeading('05', '数据来源', '空白项是这次没有从接口拿到，不是结果页藏起来。', 'source-title')}
+        <dl class="receipt-grid data-source-grid">
+            ${rows.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}
+        </dl>
+    </section>`;
 }
 
 function renderUsage(usage) {
@@ -469,16 +536,19 @@ function mobileStatusPresentation(billing) {
 
 function renderMobileRecord(record) {
     const isApple = record.payChannelType === 3;
-    const storeName = isApple ? 'Apple App Store' : record.payChannelType === 2 ? 'Google Play' : '移动端';
+    const isGoogle = record.payChannelType === 2;
+    const storeName = isApple ? 'Apple App Store' : isGoogle ? 'Google Play' : '网页账单';
+    const markClass = isApple ? 'apple' : isGoogle ? 'google' : 'web';
+    const mark = isApple ? 'A' : isGoogle ? 'G' : 'W';
     const renewText = record.autoRenewKnown === true ? (record.autoRenew ? '将自动续费' : '已停止续费') : '续费状态暂不明确';
     const billingText = record.refundedTime ? '已退款' : record.isOverdue ? '扣款异常' : record.state === 'active' ? '账单有效' : '已结束';
     const amount = billingAmountText(record);
     return `
         <article class="mobile-record">
             <div class="mobile-record-main">
-                <span class="store-mark ${isApple ? 'apple' : 'google'}">${isApple ? 'A' : 'G'}</span>
+                <span class="store-mark ${markClass}">${mark}</span>
                 <div>
-                    <h3>${esc(planName(record.accountType))} · ${esc(storeName)}</h3>
+                    <h3>${esc(planName(record.accountType) || '账单')} · ${esc(storeName)}</h3>
                     <p class="mobile-price">${esc(amount === '—' ? billingText : amount)}</p>
                 </div>
             </div>
@@ -643,6 +713,7 @@ function clearSensitiveData() {
     currentSubscription = null;
     currentAccountDiagnostics = null;
     currentMobileBilling = { status: 'unavailable', records: [] };
+    currentQueryMode = 'browser-session';
 }
 
 function setBusy(value) {
