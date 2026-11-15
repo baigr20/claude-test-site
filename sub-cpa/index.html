@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sub / CPA 互转 · NX 工具箱</title>
+  <meta name="description" content="在浏览器本地将 Sub2API、CPA/Codex 与 GPT Session 互转。不上传凭证。" />
+  <meta name="theme-color" content="#0f6e62" />
+  <meta name="referrer" content="no-referrer" />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <script src="/assets/theme.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳到内容</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="/">
+        <span class="mark" aria-hidden="true">NX</span>
+        <span class="brand-text"><strong>NX 工具箱</strong><small>claude.nx.kg</small></span>
+      </a>
+      <div class="header-actions">
+        <a class="button button--quiet" href="/">返回工具箱</a>
+        <button class="icon-btn" id="themeToggle" type="button" onclick="toggleToolboxTheme()">◐</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap tool-page">
+    <nav class="crumb" aria-label="面包屑"><a href="/">工具箱</a><span aria-hidden="true">/</span><span>Sub / CPA 互转</span></nav>
+    <header class="tool-head">
+      <h1>Sub / CPA 互转</h1>
+      <p>粘贴、上传或拖入 JSON / JSONL / 文本，选择输出为 CPA、Cockpit 或 SUB。所有转换都在当前浏览器完成，本页不会把输入发到服务器，也不提供登录或测活。</p>
+      <div class="pill-row">
+        <span class="pill">本地处理，不上传凭证</span>
+        <span class="pill">纯静态页面</span>
+      </div>
+    </header>
+
+    <section class="status-strip" aria-label="转换状态">
+      <div><span>记录</span><strong id="statCount">0</strong></div>
+      <div><span>缺 RT / 未修正</span><strong id="statMissingRefresh">0</strong></div>
+      <div><span>输出</span><strong id="statFormat">Sub2API</strong></div>
+      <div><span>状态</span><strong id="statStatus">待转换</strong></div>
+    </section>
+
+    <div class="commandbar">
+      <div class="segmented" role="group" aria-label="输出目标">
+        <button id="targetCpa" type="button">CPA</button>
+        <button id="targetCockpit" type="button">Cockpit</button>
+        <button id="targetSub" type="button" class="is-active">SUB</button>
+      </div>
+      <button id="convertNow" class="button button--solid" type="button">转换</button>
+      <button id="checkFormat" class="button" type="button">检查格式</button>
+      <button id="swapDirection" class="button button--quiet" type="button">切换目标</button>
+      <button id="pasteDemo" class="button button--quiet" type="button">填入示例</button>
+      <button id="clearAll" class="button button--quiet" type="button">清空</button>
+      <button id="downloadOutput" class="button" type="button">下载</button>
+      <button id="downloadZip" class="button button--quiet" type="button">下载 CPA ZIP</button>
+    </div>
+
+    <section class="workspace" aria-label="转换工作台">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="kicker">输入</span>
+            <h2 id="inputTitle">输入内容</h2>
+          </div>
+          <label class="button file-button">
+            上传文件
+            <input id="fileInput" type="file" accept=".json,.jsonl,.txt,application/json,text/plain" />
+          </label>
+        </div>
+        <div id="dropZone" class="drop-zone" tabindex="0">将文件拖到此处，或在下方粘贴。支持 JSON、JSONL 和文本。</div>
+        <textarea id="sourceText" spellcheck="false" placeholder="粘贴 Sub2API、CPA/Codex JSON、GPT Session JSON、JSONL，或带 refresh_token / rt 的回调链接…"></textarea>
+      </section>
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="kicker">输出</span>
+            <h2 id="outputTitle">SUB 输出</h2>
+          </div>
+        </div>
+        <textarea id="outputText" spellcheck="false" readonly placeholder="转换结果会显示在这里"></textarea>
+      </section>
+    </section>
+
+    <div id="warningBox" class="callout callout--warn" hidden></div>
+
+    <section class="help" aria-label="格式说明">
+      <article class="note">
+        <h2>支持的输入</h2>
+        <ul>
+          <li>Sub2API JSON（含 <code>type: "sub2api-data"</code> 或账号对象）</li>
+          <li>CPA / Codex JSON 或 JSONL</li>
+          <li>GPT Session / AT JSON（需带 <code>user</code> 对象）</li>
+          <li>带 <code>refresh_token</code> / <code>rt</code> 或访问令牌的授权回调链接</li>
+          <li>以上格式的混合内容</li>
+        </ul>
+      </article>
+      <article class="note">
+        <h2>本页明确不支持</h2>
+        <ul>
+          <li>登录 Codex / GPT，或把授权 <code>code</code> 换成刷新令牌</li>
+          <li>账号测活、下单查询、在线聊天或把凭证发到第三方接口</li>
+          <li>私有工作台、账号库和服务器端保存</li>
+        </ul>
+        <p>示例数据是虚构的，不能用来登录任何真实服务。</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p><a href="/">返回 NX 工具箱</a>。转换逻辑来自既有的本地互转实现，这一版只保留浏览器内转换。</p>
+    </div>
+  </footer>
+
+  <div id="dropOverlay" class="drop-overlay" hidden>
+    <div>
+      <strong>松手即可导入并按当前目标转换</strong>
+      <p>文件只会在本地读取。</p>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
