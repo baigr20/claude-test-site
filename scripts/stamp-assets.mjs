@@ -12,18 +12,22 @@ export const leafAssets = [
   'assets/favicon.svg',
   'sub-cpa/src/styles.css',
   'sub-cpa/src/converter.js',
-  'sub-cpa/src/codex-oauth.js'
+  'sub-cpa/src/codex-oauth.js',
+  '2fa/src/styles.css',
+  '2fa/src/totp.js'
 ]
 
 export const stampedModules = {
   'assets/home.js': ['./search.js'],
-  'sub-cpa/src/app.js': ['./converter.js', './codex-oauth.js']
+  'sub-cpa/src/app.js': ['./converter.js', './codex-oauth.js'],
+  '2fa/src/app.js': ['./totp.js']
 }
 
 export const htmlFiles = [
   'index.html',
   '404.html',
-  'sub-cpa/index.html'
+  'sub-cpa/index.html',
+  '2fa/index.html'
 ]
 
 export function sha10(buf) {

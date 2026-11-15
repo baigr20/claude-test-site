@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>动态验证码（TOTP）</title>
+    <meta name="description" content="在浏览器本地根据 Base32 密钥或 otpauth 链接生成 TOTP 动态验证码。密钥不会上传或保存。" />
+    <meta name="theme-color" content="#3aa888" />
+    <link rel="icon" href="/assets/favicon.svg?v=bfb4d29d18" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/site.css?v=0a8a901ff0" />
+    <link rel="stylesheet" href="./src/styles.css?v=dd21d8f471" />
+    <meta name="referrer" content="no-referrer" />
+    <script src="/assets/theme.js?v=78db184fe2"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">跳到内容</a>
+    <header class="site-header">
+      <div class="wrap header-row">
+        <a class="brand" href="/">
+          <span class="mark" aria-hidden="true">NX</span>
+          <span class="brand-text"><strong>NX 工具箱</strong><small>claude.nx.kg</small></span>
+        </a>
+        <div class="header-actions">
+          <button class="icon-btn" id="themeToggle" type="button" onclick="toggleToolboxTheme()">◐</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="wrap tool-page">
+      <header class="tool-intro">
+        <span>本地处理 · 不上传密钥</span>
+        <h1>动态验证码（TOTP）</h1>
+        <p>根据你输入的 Base32 密钥或 otpauth:// 链接，在当前浏览器里生成一次性验证码。本页不是任何官方登录页，也不会请你输入账号或密码。</p>
+      </header>
+
+      <div class="callout callout--warn">
+        <strong>这是账号敏感密钥。</strong>
+        不要把密钥发给别人，也不要粘贴到不信任的环境。本页只在内存中计算，不会写入浏览器存储或地址栏，也不会把密钥发到网络。用完请点击“清空”。
+      </div>
+
+      <div class="tool-grid">
+        <section class="panel">
+          <div>
+            <span class="kicker">输入</span>
+            <h2>密钥或 otpauth 链接</h2>
+          </div>
+          <form id="secretForm">
+            <label class="kicker" for="secretInput">Base32 或 otpauth://totp/…</label>
+            <textarea
+              id="secretInput"
+              class="secret-input"
+              spellcheck="false"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              placeholder="例如 otpauth://totp/Example:demo?secret=MFRGGZDFMY&amp;period=30"
+            ></textarea>
+            <div class="actions">
+              <button id="generateCode" class="button button--solid" type="submit">生成验证码</button>
+              <button id="copyCode" class="button button--quiet" type="button" disabled>复制</button>
+              <button id="clearAll" class="button button--quiet" type="button">清空</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" aria-live="polite">
+          <div>
+            <span class="kicker">输出</span>
+            <h2>当前验证码</h2>
+          </div>
+          <div class="otp-board">
+            <p id="otpCode" class="otp-code">------</p>
+            <p id="otpMeta" class="otp-meta" hidden></p>
+            <p id="countdownText" class="countdown-text">等待生成</p>
+            <div class="countdown" aria-hidden="true"><span id="countdownBar"></span></div>
+            <p id="statusText" class="status-text">等待输入</p>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div>
+          <span class="kicker">说明</span>
+          <h2>支持范围</h2>
+        </div>
+        <ul class="help-list">
+          <li>默认按 SHA1、6 位、30 秒生成，这是常见的 TOTP 设置。</li>
+          <li>若粘贴 otpauth://totp/ 链接，会读取其中的 algorithm、digits、period；算法仅支持 SHA1、SHA256、SHA512，位数为 6 或 8，时间窗口为 15–120 秒。</li>
+          <li>不支持账号密码行、HOTP、官方登录，也不做账号测活或远程请求。</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>NX 工具箱是独立的实用页面，不是 Google、Anthropic、OpenAI 或其他厂商的官方站点。</p>
+        <p>动态验证码在浏览器本地计算。请不要把真实密钥发到聊天或不信任的环境；用完后请清空。</p>
+      </div>
+    </footer>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./src/app.js?v=d025723514"></script>
+  </body>
+</html>

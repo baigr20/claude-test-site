@@ -11,6 +11,11 @@ const cards = [
     id: 'sub-cpa',
     category: 'convert',
     searchText: 'sub cpa sub/cpa sub-cpa cockpit sub2api 转换 互转 codex session json jsonl Sub / CPA 互转 在浏览器本地'
+  },
+  {
+    id: '2fa',
+    category: 'security',
+    searchText: '2fa totp otp otpauth 动态验证码 验证码 安全 base32 密钥 authenticator 动态验证码（TOTP） 在浏览器本地'
   }
 ]
 
@@ -30,6 +35,23 @@ test('filter shows the card for Sub / CPA and hides it for zz-no-match', () => {
   const miss = filterToolCards(cards, { query: 'zz-no-match', category: 'all' })
   assert.equal(miss[0].visible, false)
   assert.equal(miss.filter((item) => item.visible).length, 0)
+})
+
+test('filter shows both homepage tools and respects category plus search', () => {
+  const all = filterToolCards(cards, { query: '', category: 'all' })
+  assert.equal(all.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa,2fa')
+
+  const convert = filterToolCards(cards, { query: '', category: 'convert' })
+  assert.equal(convert.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa')
+
+  const security = filterToolCards(cards, { query: '', category: 'security' })
+  assert.equal(security.filter((item) => item.visible).map((item) => item.id).join(','), '2fa')
+
+  const totp = filterToolCards(cards, { query: 'TOTP', category: 'all' })
+  assert.equal(totp.filter((item) => item.visible).map((item) => item.id).join(','), '2fa')
+
+  const convertQuery = filterToolCards(cards, { query: 'Sub / CPA', category: 'all' })
+  assert.equal(convertQuery.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa')
 })
 
 test('CSS hidden attribute beats flex/grid display on cards', () => {

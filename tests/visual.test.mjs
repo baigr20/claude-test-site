@@ -51,3 +51,17 @@ test('theme defaults to light unless the user saved a choice', () => {
   assert.match(theme, /return 'light'/)
   assert.doesNotMatch(theme, /prefers-color-scheme:\s*dark\)\s*\.matches\s*\?\s*'dark'/)
 })
+
+test('homepage lists both tools and a clearly labeled shop friend link', () => {
+  assert.match(home, /href="\/2fa\/"/)
+  assert.match(home, /data-category="security"/)
+  assert.match(home, /data-filter="security"/)
+  assert.match(home, /友情链接 · AI 服务店铺/)
+  assert.match(home, /Plus 充值 · Gemini 等服务/)
+  assert.match(home, /优惠服务，具体价格与规则以店铺为准/)
+  assert.match(home, /href="https:\/\/wzyp\.cn\/shop\/aishop188"/)
+  assert.match(home, /rel="noopener noreferrer"/)
+  assert.match(home, /target="_blank"/)
+  assert.doesNotMatch(home, /便宜|最低价|官方授权|口碑/)
+  assert.doesNotMatch(home, /2fa\.fun/)
+})

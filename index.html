@@ -7,7 +7,7 @@
   <meta name="description" content="在浏览器本地完成格式转换等小工具。默认不上传凭证，也不保存到服务器。" />
   <meta name="theme-color" content="#3aa888" />
   <link rel="icon" href="/assets/favicon.svg?v=bfb4d29d18" type="image/svg+xml" />
-  <link rel="stylesheet" href="/assets/site.css?v=48998be86e" />
+  <link rel="stylesheet" href="/assets/site.css?v=0a8a901ff0" />
   <script src="/assets/theme.js?v=78db184fe2"></script>
 </head>
 <body>
@@ -30,9 +30,17 @@
       <p>这是一个小型工具箱。第一批只放已经真正可用的工具，转换在你的浏览器里完成，页面不会把凭证上传到本站服务器。</p>
       <div class="pill-row">
         <span class="pill">本地处理，不上传凭证</span>
-        <span class="pill">现有 1 个工具</span>
+        <span class="pill">现有 2 个工具</span>
       </div>
     </section>
+
+    <aside class="friend-banner" aria-label="友情链接">
+      <p class="kicker">友情链接 · AI 服务店铺</p>
+      <a href="https://wzyp.cn/shop/aishop188" target="_blank" rel="noopener noreferrer">
+        <strong>Plus 充值 · Gemini 等服务</strong>
+        <span>优惠服务，具体价格与规则以店铺为准</span>
+      </a>
+    </aside>
 
     <div class="toolbar">
       <label class="search">
@@ -42,6 +50,7 @@
       <div class="chips" role="group" aria-label="工具分类">
         <button class="chip is-active" type="button" data-filter="all" aria-pressed="true">全部</button>
         <button class="chip" type="button" data-filter="convert" aria-pressed="false">转换</button>
+        <button class="chip" type="button" data-filter="security" aria-pressed="false">安全</button>
       </div>
     </div>
 
@@ -50,6 +59,11 @@
         <div class="card-meta"><span>转换</span><span>本地处理</span></div>
         <h2>Sub / CPA 互转</h2>
         <p>把 Sub2API、CPA/Codex、GPT Session 或带刷新凭证的回调链接，转换成 CPA、Cockpit 或 SUB。支持检查格式、示例、下载和 ZIP 导出。</p>
+      </a>
+      <a class="card" href="/2fa/" data-tool-card data-category="security" data-search="2fa totp otp otpauth 动态验证码 验证码 安全 base32 密钥 authenticator">
+        <div class="card-meta"><span>安全</span><span>本地处理</span></div>
+        <h2>动态验证码（TOTP）</h2>
+        <p>在浏览器本地根据 Base32 密钥或 otpauth 链接生成一次性验证码，显示倒计时并可复制。密钥不会上传或保存。</p>
       </a>
       <p class="empty" id="emptyState" hidden>没有符合条件的工具。可以清空搜索，或改选“全部”。</p>
     </section>
