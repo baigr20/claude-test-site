@@ -21,6 +21,11 @@ const cards = [
     id: 'subscription',
     category: 'query',
     searchText: 'chatgpt 订阅查询 session json plus pro codex 套餐 额度 镜花水月 checkgpt accessToken ChatGPT 订阅查询 浏览器本地'
+  },
+  {
+    id: 'lm-ikale',
+    category: 'query',
+    searchText: '模型检测 模型指纹检测 fingerpoint detector lm.ikale.io llm 大语言模型 api 识别 指纹 打开第三方 Fingerpoint Detector'
   }
 ]
 
@@ -44,7 +49,7 @@ test('filter shows the card for Sub / CPA and hides it for zz-no-match', () => {
 
 test('filter shows both homepage tools and respects category plus search', () => {
   const all = filterToolCards(cards, { query: '', category: 'all' })
-  assert.equal(all.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa,2fa,subscription')
+  assert.equal(all.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa,2fa,subscription,lm-ikale')
 
   const convert = filterToolCards(cards, { query: '', category: 'convert' })
   assert.equal(convert.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa')
@@ -54,6 +59,12 @@ test('filter shows both homepage tools and respects category plus search', () =>
 
   const totp = filterToolCards(cards, { query: 'TOTP', category: 'all' })
   assert.equal(totp.filter((item) => item.visible).map((item) => item.id).join(','), '2fa')
+
+  const query = filterToolCards(cards, { query: '', category: 'query' })
+  assert.equal(query.filter((item) => item.visible).map((item) => item.id).join(','), 'subscription,lm-ikale')
+
+  const fingerprint = filterToolCards(cards, { query: '模型检测', category: 'all' })
+  assert.equal(fingerprint.filter((item) => item.visible).map((item) => item.id).join(','), 'lm-ikale')
 
   const convertQuery = filterToolCards(cards, { query: 'Sub / CPA', category: 'all' })
   assert.equal(convertQuery.filter((item) => item.visible).map((item) => item.id).join(','), 'sub-cpa')
