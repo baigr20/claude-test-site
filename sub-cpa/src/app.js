@@ -12,7 +12,7 @@ import {
   readCodexCallbackError,
   readCodexCodeCallback,
   resolveCodexCodeCallbackInput
-} from './codex-oauth.js?v=4ac4a9f86a'
+} from './codex-oauth.js?v=bd15b3e471'
 
 const TARGETS = ['cpa', 'cockpit', 'sub']
 const TARGET_LABELS = {

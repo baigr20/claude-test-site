@@ -27,7 +27,7 @@ node --test
 
 ## 测试结果
 
-全量 `node --test`：45 passed, 0 failed。
+全量 `node --test`：46 passed, 0 failed。rebase 到远端新增的 2FA 复制按钮和模型指纹检测卡片之后，又按本机工作区重写了资源 `?v=`。
 
 ## Git
 

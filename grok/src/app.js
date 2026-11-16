@@ -1,4 +1,4 @@
-import { parseGrokPayload } from './parse.js?v=bf50bdbb4c'
+import { parseGrokPayload } from './parse.js?v=0a7231cb76'
 
 const el = (id) => document.getElementById(id)
 
