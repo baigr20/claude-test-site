@@ -32,7 +32,7 @@ node --test
 
 ## Git
 
-本地提交见本次 `git log -1 --format=%h`。这次没有推远程，也没有重新部署 Worker。线上页面要等 `main` 推送，并且 Worker 重新部署后才会变。
+本地并已推送的提交是 `42c68a3`。GitHub Pages 会跟着 `main` 更新。Worker 还没在这次会话里重新部署。
 
 ## 遗留问题
 
