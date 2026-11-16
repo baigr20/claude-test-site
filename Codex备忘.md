@@ -1,6 +1,42 @@
 # Codex备忘
 
 - 日期：2026-11-16
+- 任务目标：修正 ChatGPT 订阅查询把仍有效的 accessToken 报成“Session 无效或已过期”。
+
+## 结论
+
+- 错在 Worker 的请求，不在会话过期。原先同时发送 `__Secure-next-auth.session-token` 和 `__Host-next-auth.session-token`，ChatGPT 只认前者；多出的 cookie 会让接口返回 401，页面再把所有 401/403 写成会话过期。
+- 现在先只带 accessToken、账号 ID 和会话里的 `oai-device-id`。这一步返回 401 或 403 时，才补上 `__Secure-next-auth.session-token` 重试一次。
+- accessToken 的 `exp` 尚未到期时，不再显示“已过期”。Cloudflare 挑战页单独提示为查询节点被拦截。
+- 这次改的是 Worker。静态页已经指向 `workers.dev`，需要重新部署 `backend/wrangler.subscription.jsonc` 后线上才会生效。不要重建 `ACTION_TOKEN_SECRET`。
+
+## 修改文件
+
+- `backend/subscription-worker.mjs`
+- `backend/action-token.mjs`
+- `subscription/src/query.js`
+- `backend/subscription-worker.test.mjs`
+- `tests/subscription.test.mjs`
+- `README.md`
+
+## 运行命令
+
+```powershell
+Set-Location 'D:\gitdir\claude-test-site'
+node --test
+```
+
+## 测试结果
+
+本次相关测试通过，包括 accessToken 优先、cookie 重试，以及未过期 token 不再显示“已过期”。全量 `node --test` 为 49 passed、1 failed。失败的是原有的 `tests/assets.test.mjs`：本机工作副本是 CRLF，页面里已有的资源哈希对不上，这次没有改那些 HTML。
+
+## 回退方法
+
+```powershell
+& 'D:\Downloads\cmder\vendor\git-for-windows\cmd\git.exe' -C 'D:\gitdir\claude-test-site' revert HEAD
+```
+
+- 日期：2026-11-16
 - 任务目标：把 ChatGPT 订阅查询改成 checkgpt.plus 的接口。页面可以保持镜花水月，但查询和后续操作都走同一套 API。
 
 ## 结论

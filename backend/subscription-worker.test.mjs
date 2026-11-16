@@ -44,6 +44,48 @@ test('health and query routes respond without logging tokens', async () => {
   assert.match(missingBody.message, /accessToken/)
 })
 
+test('uses the access token before the session cookie and keeps a live token distinct from expiry', async () => {
+  const originalFetch = globalThis.fetch
+  const calls = []
+  globalThis.fetch = async (url, init) => {
+    const headers = init?.headers || {}
+    calls.push({ url: String(url), cookie: headers.Cookie || '', device: headers['oai-device-id'] || '' })
+    if (!headers.Cookie) return Response.json({ detail: 'Unauthorized' }, { status: 401 })
+    if (String(url).includes('/backend-api/me')) return Response.json({ email: 'demo@example.com', name: 'Demo' })
+    return Response.json({})
+  }
+  try {
+    const live = await handleQuery({
+      session: {
+        accessToken: demoToken,
+        sessionToken: 'session-secret-value',
+        statsigContext: { deviceId: 'device-1' }
+      }
+    })
+    assert.equal(live.ok, true)
+    assert.equal(live.accountDiagnostics.sources.me, 'ok')
+    assert.equal(calls.some((call) => call.cookie === '' && call.device === 'device-1'), true)
+    assert.equal(calls.some((call) => call.cookie === '__Secure-next-auth.session-token=session-secret-value'), true)
+    assert.equal(calls.some((call) => call.cookie.includes('__Host-next-auth')), false)
+    assert.equal(JSON.stringify(live).includes(demoToken), false)
+    assert.equal(JSON.stringify(live).includes('session-secret-value'), false)
+
+    calls.length = 0
+    globalThis.fetch = async () => Response.json({ detail: 'Unauthorized' }, { status: 401 })
+    const refused = await handleQuery({ session: { accessToken: demoToken } })
+    assert.equal(refused.ok, false)
+    assert.equal(refused.message.includes('已过期'), false)
+    assert.match(refused.message, /仍在有效期内/)
+
+    const expiredToken = jwtWith({ exp: 1000000000 })
+    const expired = await handleQuery({ session: { accessToken: expiredToken } })
+    assert.equal(expired.ok, false)
+    assert.match(expired.message, /已过期/)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('proxy maps ChatGPT payloads including phone, invoices and billing time', async () => {
   const originalFetch = globalThis.fetch
   globalThis.fetch = async (url) => {

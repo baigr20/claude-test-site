@@ -72,6 +72,7 @@ export function parseSessionInput(rawText) {
   const profile = record(claims['https://api.openai.com/profile'])
   const user = record(data.user)
   const account = record(data.account)
+  const statsig = record(data.statsigContext)
   const tokenExpiry = typeof claims.exp === 'number' && Number.isFinite(claims.exp)
     ? new Date(claims.exp * 1000) : null
   const expires = tokenExpiry && !Number.isNaN(tokenExpiry.getTime()) ? tokenExpiry.toISOString() : ''
@@ -92,6 +93,7 @@ export function parseSessionInput(rawText) {
     refreshToken: text(data.refreshToken, data.refresh_token) || null,
     accountId: text(data.accountId, data.account_id, account.id, account.account_id,
       auth.chatgpt_account_id, auth.account_id, claims.chatgpt_account_id, claims.account_id) || null,
+    deviceId: text(data.deviceId, data.device_id, data.oaiDeviceId, data.oai_device_id, statsig.deviceId, statsig.device_id) || null,
     planType: text(data.planType, data.plan_type, account.planType, account.plan_type, auth.chatgpt_plan_type, claims.chatgpt_plan_type),
     expires: text(data.expires) || expires,
     subscription: null,
@@ -129,6 +131,7 @@ function sourceStatus(value) {
   if (typeof value === 'object' && value._error) {
     const error = String(value._error)
     if (/cors/i.test(error)) return 'cors'
+    if (/challenge/i.test(error)) return 'challenge'
     if (/HTTP 401|HTTP 403/.test(error)) return 'auth'
     if (/HTTP /.test(error)) return 'http'
     return 'error'

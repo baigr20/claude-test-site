@@ -71,7 +71,7 @@ function safeHttpsUrl(value) {
   }
 }
 
-async function chatgptSend(method, path, session, body) {
+function chatgptHeaders(session, includeCookie, jsonBody) {
   const headers = {
     Authorization: `Bearer ${session.accessToken}`,
     Accept: 'application/json',
@@ -81,10 +81,20 @@ async function chatgptSend(method, path, session, body) {
     'oai-language': 'zh-CN'
   }
   if (session.accountId) headers['ChatGPT-Account-Id'] = session.accountId
-  if (session.sessionToken) {
-    headers.Cookie = `__Secure-next-auth.session-token=${session.sessionToken}; __Host-next-auth.session-token=${session.sessionToken}`
+  if (session.deviceId) headers['oai-device-id'] = session.deviceId
+  if (includeCookie && session.sessionToken) {
+    headers.Cookie = `__Secure-next-auth.session-token=${session.sessionToken}`
   }
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (jsonBody) headers['Content-Type'] = 'application/json'
+  return headers
+}
+
+function isChallenge(status, text) {
+  return status === 403 && /cf-mitigated|just a moment|challenge-platform/i.test(String(text || ''))
+}
+
+async function chatgptSend(method, path, session, body, includeCookie) {
+  const headers = chatgptHeaders(session, includeCookie, body !== undefined)
   try {
     const response = await fetch(`${CHATGPT}${path}`, {
       method,
@@ -102,16 +112,29 @@ async function chatgptSend(method, path, session, body) {
         data = { _error: 'non-json' }
       }
     }
-    if (!response.ok) return { ok: false, status: response.status, data }
-    return { ok: true, status: response.status, data }
+    const challenge = isChallenge(response.status, text)
+    if (!response.ok) return { ok: false, status: response.status, data, challenge }
+    return { ok: true, status: response.status, data, challenge: false }
   } catch (error) {
-    return { ok: false, status: 0, data: { _error: String(error?.message || error) } }
+    return { ok: false, status: 0, data: { _error: String(error?.message || error) }, challenge: false }
   }
 }
 
+async function chatgptSendPreferred(method, path, session, body) {
+  const first = await chatgptSend(method, path, session, body, false)
+  if (first.ok || !session.sessionToken || (first.status !== 401 && first.status !== 403)) return first
+  const second = await chatgptSend(method, path, session, body, true)
+  if (second.ok) return second
+  if (second.challenge && !first.challenge) return second
+  return first
+}
+
 async function chatgptGet(path, session) {
-  const result = await chatgptSend('GET', path, session)
-  if (!result.ok) return { _error: `HTTP ${result.status || 0}`, status: result.status }
+  const result = await chatgptSendPreferred('GET', path, session)
+  if (!result.ok) {
+    const label = result.challenge ? `HTTP ${result.status} challenge` : `HTTP ${result.status || 0}`
+    return { _error: label, status: result.status }
+  }
   return result.data
 }
 
@@ -144,7 +167,7 @@ async function requestPortal(session) {
     ['/backend-api/payments/billing_portal', { return_url: `${CHATGPT}/` }]
   ]
   for (const [path, body] of attempts) {
-    const result = await chatgptSend('POST', path, session, body)
+    const result = await chatgptSendPreferred('POST', path, session, body)
     const url = safeHttpsUrl(result.data?.url || result.data?.portal_url || result.data?.session?.url)
     if (result.ok && url) return url
   }
@@ -164,18 +187,29 @@ async function requireSession(payload, env) {
   return { session }
 }
 
+function sessionExpired(session) {
+  const exp = session?.claims?.exp
+  return typeof exp === 'number' && Number.isFinite(exp) && exp * 1000 <= Date.now()
+}
+
+function queryFailureMessage(statuses, session) {
+  if (statuses.some((status) => status === 'challenge')) return 'ChatGPT 拦截了查询节点，会话没有过期'
+  if (statuses.some((status) => status === 'auth')) {
+    return sessionExpired(session)
+      ? 'Session 无效或已过期，请重新获取'
+      : 'ChatGPT 拒绝了这份仍在有效期内的 accessToken'
+  }
+  return '查询失败，请检查 Session 是否有效'
+}
+
 export async function handleQuery(payload, env = {}) {
   const raw = payload?.session && typeof payload.session === 'object' ? payload.session : payload
   const session = parseSessionInput(JSON.stringify(raw || {}))
   const result = await loadSubscription(session)
   const statuses = Object.values(result.accountDiagnostics?.sources || {})
   const anyOk = statuses.some((status) => status === 'ok')
-  const anyAuth = statuses.some((status) => status === 'auth')
   if (!anyOk) {
-    return {
-      ok: false,
-      message: anyAuth ? 'Session 无效或已过期，请重新获取' : '查询失败，请检查 Session 是否有效'
-    }
+    return { ok: false, message: queryFailureMessage(statuses, session) }
   }
   result.actionToken = await defaultActionStore.issue(session, { secret: secretFrom(env) })
   return result
@@ -198,7 +232,7 @@ export async function handleCancel(payload, env = {}) {
       body: { ok: true, requiresPortal: true, url: await requestPortal(found.session), subscription: current.subscription }
     }
   }
-  const response = await chatgptSend('POST', '/backend-api/subscriptions/cancel', found.session, {
+  const response = await chatgptSendPreferred('POST', '/backend-api/subscriptions/cancel', found.session, {
     account_id: found.session.accountId
   })
   if (!response.ok) {
@@ -228,7 +262,7 @@ export async function handleRenew(payload, env = {}) {
   if (!found.session.accountId) {
     return { status: 400, body: { ok: false, message: '无法解析 account_id，请确认 Session 完整有效' } }
   }
-  const response = await chatgptSend('POST', '/backend-api/subscriptions/resume', found.session, {
+  const response = await chatgptSendPreferred('POST', '/backend-api/subscriptions/resume', found.session, {
     account_id: found.session.accountId
   })
   if (!response.ok) {

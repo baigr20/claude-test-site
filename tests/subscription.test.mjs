@@ -100,6 +100,11 @@ test('maps checkgpt account-check fields for renew, channel, cycle and usage', (
   assert.equal(session.accountId, 'acc-9')
   assert.equal(session.refreshToken, 'refresh-1')
   assert.equal(session.subscription, null)
+  const withDevice = parseSessionInput(JSON.stringify({
+    accessToken: token,
+    statsigContext: { deviceId: 'device-1' }
+  }))
+  assert.equal(withDevice.deviceId, 'device-1')
 
   const web = buildResult(session, {
     accountCheck: {
@@ -184,6 +189,8 @@ test('subscription pages follow the checkgpt query and action contract', () => {
   assert.match(worker, /accounts\/check\/v4-2023-04-27/)
   assert.match(worker, /\/backend-api\/subscriptions\/cancel/)
   assert.match(worker, /\/backend-api\/subscriptions\/resume/)
+  assert.doesNotMatch(worker, /__Host-next-auth/)
+  assert.match(worker, /oai-device-id/)
   assert.match(resultJs, /\/api\/subscription\/cancel/)
   assert.match(resultJs, /\/api\/subscription\/renew/)
   assert.match(resultJs, /\/api\/subscription\/link/)

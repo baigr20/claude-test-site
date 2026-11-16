@@ -26,6 +26,7 @@ function sessionSlice(session) {
     accessToken: String(session?.accessToken || ''),
     sessionToken: String(session?.sessionToken || ''),
     accountId: String(session?.accountId || ''),
+    deviceId: String(session?.deviceId || ''),
     refreshToken: String(session?.refreshToken || '')
   }
 }
@@ -63,6 +64,7 @@ export function createActionStore() {
         accessToken: String(data.accessToken),
         sessionToken: String(data.sessionToken || ''),
         accountId: String(data.accountId || ''),
+        deviceId: String(data.deviceId || ''),
         refreshToken: String(data.refreshToken || ''),
         jti: String(data.jti || ''),
         exp: data.exp
