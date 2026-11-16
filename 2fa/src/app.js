@@ -2,7 +2,7 @@ import {
   generateTotpFromInput,
   parseTotpInput,
   remainingSeconds
-} from './totp.js?v=1f9301642b'
+} from './totp.js?v=789b2de7d5'
 
 const el = (id) => document.getElementById(id)
 
@@ -29,12 +29,44 @@ function setStatus(text, kind = '') {
   status.dataset.kind = kind
 }
 
+function currentOtpDigits() {
+  const code = String(state.code || '')
+  return /^\d+$/.test(code) ? code : ''
+}
+
+function resetCopyButtonLabel() {
+  const button = el('copyCode')
+  if (!button) return
+  window.clearTimeout(resetCopyButtonLabel.timer)
+  button.textContent = '复制验证码'
+  delete button.dataset.copiedCode
+}
+
+function updateCopyButton({ copied = false } = {}) {
+  const button = el('copyCode')
+  if (!button) return
+  const code = currentOtpDigits()
+  button.disabled = !code
+  if (!code) {
+    resetCopyButtonLabel()
+    return
+  }
+  if (copied) {
+    button.textContent = '已复制'
+    button.dataset.copiedCode = code
+    window.clearTimeout(resetCopyButtonLabel.timer)
+    resetCopyButtonLabel.timer = window.setTimeout(resetCopyButtonLabel, 1600)
+    return
+  }
+  if (button.dataset.copiedCode !== code) resetCopyButtonLabel()
+}
+
 function renderCode(code, remaining, period) {
   el('otpCode').textContent = code || '------'
   el('countdownText').textContent = code ? `${remaining} 秒后刷新` : '等待生成'
   const ratio = code && period ? remaining / period : 0
   el('countdownBar').style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`
-  el('copyCode').disabled = !code
+  updateCopyButton()
 }
 
 function renderMeta(parsed) {
@@ -105,14 +137,17 @@ function clearAll() {
 }
 
 async function copyCode() {
-  if (!state.code) {
+  const code = currentOtpDigits()
+  if (!code) {
     showToast('还没有可复制的验证码')
     return
   }
   try {
-    await navigator.clipboard.writeText(state.code)
-    showToast('已复制验证码')
+    await navigator.clipboard.writeText(code)
+    updateCopyButton({ copied: true })
+    showToast('已复制')
   } catch {
+    resetCopyButtonLabel()
     showToast('复制失败，请手动选择验证码')
   }
 }

@@ -139,3 +139,24 @@ test('2FA frontend keeps secrets local: no remote calls or storage', () => {
   assert.match(readFileSync(path.join(root, '2fa/index.html'), 'utf8'), /不是任何官方登录页/)
   assert.match(readFileSync(path.join(root, '2fa/index.html'), 'utf8'), /不要把密钥发给别人/)
 })
+
+test('2FA page puts a copy-code button beside the current OTP', () => {
+  const html = readFileSync(path.join(root, '2fa/index.html'), 'utf8')
+  const app = readFileSync(path.join(root, '2fa/src/app.js'), 'utf8')
+  const styles = readFileSync(path.join(root, '2fa/src/styles.css'), 'utf8')
+
+  assert.match(html, /id="otpCode"[^>]*>------<\/p>\s*<button id="copyCode"/s)
+  assert.match(html, /<button id="copyCode"[^>]*>复制验证码<\/button>/)
+  assert.match(html, /id="copyCode"[^>]*\bdisabled\b/)
+  assert.doesNotMatch(html, /id="copyCode"[^>]*button--quiet/)
+  const actions = html.match(/<div class="actions">[\s\S]*?<\/div>/)[0]
+  assert.doesNotMatch(actions, /id="copyCode"/)
+
+  assert.match(styles, /\.otp-code-row/)
+  assert.match(app, /currentOtpDigits/)
+  assert.match(app, /clipboard\.writeText\(code\)/)
+  assert.match(app, /showToast\('已复制'\)/)
+  assert.match(app, /button\.textContent = '已复制'/)
+  assert.match(app, /复制失败，请手动选择验证码/)
+  assert.match(app, /button\.disabled = !code/)
+})
