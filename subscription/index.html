@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="查询 ChatGPT 套餐、手机号、历史订单和额度。同源代理可用时向 ChatGPT 只读查询，不落盘。">
+    <meta name="description" content="按 checkgpt.plus 的查询接口核对 ChatGPT 套餐、续费、手机号和账单。会话不落盘。">
     <title>ChatGPT 订阅查询｜NX 工具箱</title>
     <meta name="theme-color" content="#3aa888">
     <link rel="icon" href="/assets/favicon.svg?v=9ff6e7de59" type="image/svg+xml">
@@ -31,8 +31,8 @@
             <span class="brand-mark" aria-hidden="true">镜</span>
             <span><strong>镜花水月</strong><small>ChatGPT Subscription</small></span>
         </a>
-        <div id="service-status" class="public-badge service-status checking" role="status" aria-live="polite" aria-label="正在确认查询方式">
-            <span aria-hidden="true"></span><b>浏览器本地查询</b>
+        <div id="service-status" class="public-badge service-status checking" role="status" aria-live="polite" aria-label="正在确认查询服务状态">
+            <span aria-hidden="true"></span><b>正在确认服务</b>
         </div>
     </header>
 
@@ -40,11 +40,11 @@
         <section class="intro-panel" aria-labelledby="page-title">
             <div class="eyebrow">以会话为引 · 照见订阅全貌</div>
             <h1 id="page-title">一镜照见<br><em>你的订阅全貌</em></h1>
-            <p>套餐、额度、到期和续费，一次查询便清清楚楚。有同源代理时会向 ChatGPT 拉取手机号和账单；没有代理时只解析会话。</p>
+            <p>套餐、额度、到期和自动续费，一次查询便清清楚楚。查询、取消续费、恢复续费和账单入口都走本站接口，再由接口向 ChatGPT 核对。</p>
             <div class="trust-list" aria-label="查询内容">
                 <div><span aria-hidden="true">一</span><strong>套餐全貌</strong><small>当前方案与会话信息</small></div>
                 <div><span aria-hidden="true">览</span><strong>余量清晰</strong><small>能确认时显示 Codex 额度</small></div>
-                <div><span aria-hidden="true">明</span><strong>续费有数</strong><small>官方账单入口</small></div>
+                <div><span aria-hidden="true">明</span><strong>续费有数</strong><small>可关闭或恢复自动续费</small></div>
             </div>
         </section>
 
@@ -73,22 +73,22 @@
                 </button>
             </div>
 
-            <div class="privacy-line"><span aria-hidden="true">●</span> <span id="privacy-copy">当前没有同源代理。会话只在浏览器里解析；跨域拦截时手机号、历史订单和订阅到期时间会是空的。</span></div>
+            <div class="privacy-line"><span aria-hidden="true">●</span> <span id="privacy-copy">会话只用于这一次查询，以及结果页 15 分钟内的续费操作。服务端不落盘、不记日志，离开结果页后凭证即作废。</span></div>
         </section>
     </main>
 
     <section class="source-strip" aria-label="可以查询的内容">
         <div><span class="source-icon source-openai">01</span><p><strong>套餐与时间</strong><small>套餐、账号创建和会话有效期</small></p></div>
-        <div><span class="source-icon source-apple">02</span><p><strong>手机号与订单</strong><small>代理可用时从 ChatGPT 接口返回</small></p></div>
-        <div><span class="source-icon source-google">03</span><p><strong>额度与账单</strong><small>没有代理时会标明接口未返回</small></p></div>
+        <div><span class="source-icon source-apple">02</span><p><strong>手机号与订单</strong><small>从 ChatGPT 账号和账单接口返回</small></p></div>
+        <div><span class="source-icon source-google">03</span><p><strong>额度与续费</strong><small>接口没有返回的项会标明，不会藏起来</small></p></div>
     </section>
 
     <footer class="site-footer">
         <div class="wrap">
             <p>NX 工具箱是独立的实用页面，不是 OpenAI 或 checkgpt.plus 的官方站点。</p>
-            <p>订阅查询优先走同源代理；没有代理时在浏览器本地完成。请不要把 Session 发给别人或未知网站。</p>
+            <p>订阅查询对齐 checkgpt.plus 的接口：查询、取消续费、恢复续费、账单链接和凭证释放。请不要把 Session 发给别人或未知网站。</p>
         </div>
     </footer>
-    <script type="module" src="./src/app.js?v=dc27411f91"></script>
+    <script type="module" src="./src/app.js?v=0bde1260ea"></script>
 </body>
 </html>

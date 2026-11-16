@@ -85,12 +85,87 @@ test('buildResult fills phone and billing expire from live payloads', () => {
   assert.equal(result.queryMode, 'proxy')
 })
 
-test('subscription pages keep the mirror layout and optional same-origin proxy', () => {
+test('maps checkgpt account-check fields for renew, channel, cycle and usage', () => {
+  const token = jwtWith({
+    email: 'demo@example.com',
+    exp: 2000000000,
+    'https://api.openai.com/auth': { chatgpt_user_id: 'user-9', account_id: 'acc-9' }
+  })
+  const session = parseSessionInput(JSON.stringify({
+    accessToken: token,
+    refreshToken: 'refresh-1',
+    sessionToken: 'session-1'
+  }))
+  assert.equal(session.userId, 'user-9')
+  assert.equal(session.accountId, 'acc-9')
+  assert.equal(session.refreshToken, 'refresh-1')
+  assert.equal(session.subscription, null)
+
+  const web = buildResult(session, {
+    accountCheck: {
+      accounts: {
+        'acc-9': {
+          account: { plan_type: 'plus' },
+          entitlement: {
+            has_active_subscription: true,
+            subscription_plan: 'chatgptplusplan',
+            expires_at: '2026-12-01T00:00:00.000Z',
+            billing_period: 'yearly',
+            is_delinquent: false
+          },
+          last_active_subscription: {
+            purchase_origin_platform: 'chatgpt_web',
+            will_renew: true,
+            billing_currency: 'usd'
+          }
+        }
+      }
+    },
+    usage: {
+      rate_limit: {
+        primary_window: { used_percent: 12, resets_at: '2026-11-16T00:00:00.000Z' },
+        secondary_window: { used_percent: 40, resets_at: '2026-11-20T00:00:00.000Z' }
+      }
+    },
+    credits: { available_count: 2, credits: [{ title: '重置', status: 'available' }] },
+    settings: { mfa: true, totp_authenticators: [{ id: 'totp-1' }] }
+  }, 'proxy')
+  assert.equal(web.subscription.state, 'active')
+  assert.equal(web.subscription.payChannelType, 1)
+  assert.equal(web.subscription.autoRenewKnown, true)
+  assert.equal(web.subscription.autoRenew, true)
+  assert.equal(web.subscription.paymentCycle, 'yearly')
+  assert.equal(web.subscription.isOverdue, false)
+  assert.equal(web.subscription.currency, 'USD')
+  assert.equal(web.accountDiagnostics.codexUsage.secondaryUsedPercent, 40)
+  assert.equal(web.accountDiagnostics.codexUsage.resetCreditsAvailable, 2)
+  assert.equal(web.accountDiagnostics.security.mfaEnabled, true)
+  assert.equal(web.accountDiagnostics.security.totpCount, 1)
+
+  const paused = buildResult(session, {
+    accountCheck: {
+      accounts: {
+        default: {
+          entitlement: { has_active_subscription: true, subscription_plan: 'chatgptplusplan', is_delinquent: true },
+          last_active_subscription: { purchase_origin_platform: 'ios', will_renew: false }
+        }
+      }
+    }
+  }, 'proxy')
+  assert.equal(paused.subscription.state, 'paused')
+  assert.equal(paused.subscription.payChannelType, 3)
+  assert.equal(paused.subscription.autoRenew, false)
+  assert.equal(paused.mobileBilling.status, 'complete')
+  assert.equal(paused.mobileBilling.records[0].payChannelType, 3)
+})
+
+test('subscription pages follow the checkgpt query and action contract', () => {
   const index = readFileSync(path.join(root, 'subscription/index.html'), 'utf8')
   const result = readFileSync(path.join(root, 'subscription/result.html'), 'utf8')
   const app = readFileSync(path.join(root, 'subscription/src/app.js'), 'utf8')
   const query = readFileSync(path.join(root, 'subscription/src/query.js'), 'utf8')
   const resultJs = readFileSync(path.join(root, 'subscription/src/result.js'), 'utf8')
+  const worker = readFileSync(path.join(root, 'backend/subscription-worker.mjs'), 'utf8')
 
   assert.match(index, /一镜照见/)
   assert.match(index, /id="session-json"/)
@@ -99,13 +174,21 @@ test('subscription pages keep the mirror layout and optional same-origin proxy',
   assert.match(index, /chatgpt.com\/api\/auth\/session/)
   assert.match(index, /id="privacy-copy"/)
   assert.match(result, /你的订阅全貌/)
-  assert.match(app, /querySubscriptionLocally/)
+  assert.match(app, /parseSessionInput/)
   assert.match(app, /\/api\/health/)
-  assert.doesNotMatch(app, /\/api\/subscription\/query/)
-  assert.match(query, /\/api\/subscription\/query/)
-  assert.match(query, /backend-api\/payments\/invoices/)
-  assert.doesNotMatch(resultJs, /\/api\/subscription\/cancel/)
-  assert.match(resultJs, /chatgpt.com\/settings\/billing/)
+  assert.match(app, /\/api\/subscription\/query/)
+  assert.doesNotMatch(app, /querySubscriptionLocally/)
+  assert.match(app, /actionToken\.length < 24/)
+  assert.match(query, /purchase_origin_platform/)
+  assert.match(query, /will_renew/)
+  assert.match(worker, /accounts\/check\/v4-2023-04-27/)
+  assert.match(worker, /\/backend-api\/subscriptions\/cancel/)
+  assert.match(worker, /\/backend-api\/subscriptions\/resume/)
+  assert.match(resultJs, /\/api\/subscription\/cancel/)
+  assert.match(resultJs, /\/api\/subscription\/renew/)
+  assert.match(resultJs, /\/api\/subscription\/link/)
+  assert.match(resultJs, /\/api\/action\/release/)
+  assert.doesNotMatch(resultJs, /本站不代发/)
   assert.match(resultJs, /绑定手机号/)
   assert.match(resultJs, /历史订单/)
   assert.match(resultJs, /会话有效期/)

@@ -327,7 +327,7 @@ function renderSubscription() {
             <details class="query-notes">
                 <summary>查询说明与隐私</summary>
                 <div>
-                    <p>这是 NX 工具箱里的订阅查询页。同源代理可用时，会向 ChatGPT 拉取手机号、额度和账单；代理只在内存中使用会话，不落盘。没有代理时，只在当前浏览器解析，跨域拦截会导致这些字段为空。</p>
+                    <p>这是 NX 工具箱里的订阅查询页。查询和续费操作都走本站接口，由接口持有这次会话向 ChatGPT 核对。凭证保留 15 分钟，服务端不落盘、不记日志。</p>
                     <p>空白项是接口没有返回，不是页面藏起来。到期时间是订阅周期，会话有效期是 accessToken / session 过期时间，两者不是同一件事。</p>
                     <p>Apple App Store 和 Google Play 的具体扣款、退款与发票由原支付平台管理。</p>
                 </div>
@@ -358,13 +358,11 @@ function queryModeLabel(mode) {
 
 function emptyOrderReason(diagnostics, queryMode) {
     const invoices = diagnostics?.sources?.invoices;
-    if (queryMode === 'proxy' && invoices === 'ok') {
+    if ((queryMode === 'proxy' || queryMode === 'unknown') && invoices === 'ok') {
         return '接口已返回，但这个账号没有网页或移动端订单。';
     }
-    if (invoices === 'cors' || queryMode === 'browser-session') {
-        return '历史订单需要账单接口。当前没有同源代理时，浏览器跨域读不到 chatgpt.com，所以这里是空的。点上方「查看历史账单」打开官方入口。';
-    }
-    return '网页订阅的发票在官方账单页；Apple / Google 订单在原商店。点上方「查看历史账单」打开官方入口。';
+    if (invoices === 'auth') return '账单接口拒绝了这次会话。请重新打开会话数据后再查。';
+    return '网页订阅的发票在官方账单页；Apple / Google 订单在原商店。可以点上方按钮打开官方入口。';
 }
 
 function renderDataSource(diagnostics, queryMode) {
@@ -374,6 +372,7 @@ function renderDataSource(diagnostics, queryMode) {
     const rows = [
         ['查询方式', queryModeLabel(queryMode)],
         ['/backend-api/me（手机号）', sourceStatusLabel(sources.me)],
+        ['/backend-api/accounts/check（续费与渠道）', sourceStatusLabel(sources.accountCheck)],
         ['/backend-api/payments/invoices（历史订单）', sourceStatusLabel(sources.invoices)],
         ['/backend-api/subscriptions（到期时间）', sourceStatusLabel(sources.subscriptions)],
         ['/backend-api/wham/usage（额度）', sourceStatusLabel(sources.usage)],
@@ -650,8 +649,56 @@ function confirmCancelRenewal() {
 }
 
 async function cancelRenewal() {
-    if (busy || !canCancelRenewal(currentSubscription)) return;
-    showOfficialBilling('关闭自动续费请到官方账单页完成');
+    if (busy || !currentActionToken || !canCancelRenewal(currentSubscription)) return;
+    const actionToken = currentActionToken;
+    const wasPaused = currentSubscription.state === 'paused';
+    setBusy(true);
+    showModal('正在关闭自动续费', '<div class="query-progress"><span class="query-spinner"></span><strong>正在联系 ChatGPT 处理</strong></div>');
+    try {
+        const response = await fetch('/api/subscription/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actionToken }),
+            cache: 'no-store'
+        });
+        const result = await response.json().catch(() => ({}));
+        if (currentActionToken !== actionToken) {
+            closeModal(true);
+            return;
+        }
+        if (!response.ok || !result.ok) throw new Error(result.message || '关闭自动续费失败');
+        if (result.requiresPortal && result.url) {
+            applyServerResult(result);
+            renderSubscription();
+            showModal('请在官方页面完成关闭', `
+                <div class="link-result">
+                    <strong>ChatGPT 暂未直接确认关闭</strong>
+                    <p>${wasPaused || currentSubscription.state === 'paused'
+                        ? '请在官方账单页面核对并完成关闭自动续费。取消续费不代表会员权益恢复，也不处理补缴或清除欠费。'
+                        : '已为你准备好当前账号的官方账单页面。打开后确认关闭自动续费即可，权益仍会保留到本期结束。'}</p>
+                    <a class="official-link" href="${esc(result.url)}" target="_self" rel="noreferrer">打开官方账单页面</a>
+                </div>
+                <button type="button" onclick="closeModal()" class="btn btn-secondary">暂不打开</button>`);
+            return;
+        }
+        if (result.verified !== true || !result.subscription
+            || result.subscription.payChannelType !== 1
+            || result.subscription.autoRenewKnown !== true || result.subscription.autoRenew !== false) {
+            throw new Error('尚未确认自动续费已关闭，请重新查询或在官方账单页核对');
+        }
+        applyServerResult(result);
+        closeModal(true);
+        renderSubscription();
+        showToast(currentSubscription.state === 'paused' ? '自动续费已关闭；会员仍处于暂停状态' : '自动续费已关闭');
+    } catch (error) {
+        if (currentActionToken !== actionToken) {
+            closeModal(true);
+            return;
+        }
+        showModal('操作未完成', `<div class="query-error"><span>!</span><strong>${esc(error instanceof Error ? error.message : '操作失败')}</strong><p>ChatGPT 未确认本次操作，请稍后重试。</p></div><button onclick="closeModal()" class="btn btn-primary">返回</button>`);
+    } finally {
+        setBusy(false);
+    }
 }
 
 function confirmRestoreRenewal() {
@@ -676,25 +723,68 @@ function confirmRestoreRenewal() {
 }
 
 async function restoreRenewal() {
-    if (busy || !canRestoreRenewal(currentSubscription)) return;
-    showOfficialBilling('恢复自动续费请到官方账单页完成');
-}
-
-function showOfficialBilling(title) {
-    const url = 'https://chatgpt.com/settings/billing';
-    showModal(title || '官方账单入口', `
-        <div class="link-result">
-            <strong>请在 ChatGPT 官方账单页核对</strong>
-            <p>本站不代发取消或恢复续费请求。网页订阅请打开官方账单；Apple / Google 订阅请到原商店管理。</p>
-            <textarea readonly class="code-block link-block" onclick="this.select()">${esc(url)}</textarea>
-            <div class="modal-action-row"><button onclick="copyModalCode()" class="btn btn-secondary">复制链接</button><a class="official-link" href="${esc(url)}" target="_blank" rel="noreferrer">打开链接</a></div>
-        </div>
-        <button onclick="closeModal()" class="btn btn-secondary">关闭</button>`);
+    if (busy || !currentActionToken || !canRestoreRenewal(currentSubscription)) return;
+    const actionToken = currentActionToken;
+    setBusy(true);
+    showModal('正在恢复自动续费', '<div class="query-progress"><span class="query-spinner"></span><strong>正在联系 ChatGPT 处理并核对续费状态</strong></div>');
+    try {
+        const response = await fetch('/api/subscription/renew', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actionToken }),
+            cache: 'no-store'
+        });
+        const result = await response.json().catch(() => ({}));
+        if (currentActionToken !== actionToken) {
+            closeModal(true);
+            return;
+        }
+        if (!response.ok || result.ok !== true) throw new Error(result.message || '恢复自动续费失败');
+        if (result.verified !== true || result.subscription?.state !== 'active'
+            || result.subscription.autoRenewKnown !== true || result.subscription.autoRenew !== true) {
+            throw new Error(result.message || '尚未确认自动续费已恢复，请稍后重新查询核对');
+        }
+        applyServerResult(result);
+        closeModal(true);
+        renderSubscription();
+        showToast('自动续费已恢复');
+    } catch (error) {
+        if (currentActionToken !== actionToken) {
+            closeModal(true);
+            return;
+        }
+        showModal('操作未完成', `<div class="query-error"><span>!</span><strong>${esc(error instanceof Error ? error.message : '恢复自动续费失败')}</strong><p>尚未确认恢复成功，请重新查询续费状态后再操作。</p></div><button type="button" onclick="closeModal()" class="btn btn-primary">返回</button>`);
+    } finally {
+        setBusy(false);
+    }
 }
 
 async function requestBillingLink() {
-    if (busy) return;
-    showOfficialBilling('官方账单入口');
+    if (busy || !currentActionToken) return;
+    setBusy(true);
+    showModal('正在获取账单入口', '<div class="query-progress"><span class="query-spinner"></span><strong>正在创建官方账单链接</strong></div>');
+    try {
+        const response = await fetch('/api/subscription/link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actionToken: currentActionToken }),
+            cache: 'no-store'
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.ok || !result.url) throw new Error(result.message || '无法获取官方账单链接');
+        showModal('专属账单门户链接', `
+            <div class="link-result">
+                <strong>${result.externalPlatform ? '已获取原支付平台入口' : '已获取官方账单入口'}</strong>
+                <p>${result.externalPlatform ? '该订阅由移动端支付平台管理。' : /chatgpt\.com\/account\/manage\/?$/.test(result.url) ? '这是 ChatGPT 官方账单页面。' : '链接含有临时密钥，请勿分享给他人。'}</p>
+                <textarea readonly class="code-block link-block" onclick="this.select()">${esc(result.url)}</textarea>
+                <div class="modal-action-row"><button onclick="copyModalCode()" class="btn btn-secondary">复制链接</button><a class="official-link" href="${esc(result.url)}" target="_blank" rel="noreferrer">打开链接</a></div>
+            </div>
+            <button onclick="closeModal()" class="btn btn-secondary">关闭</button>`);
+    } catch (error) {
+        showModal('获取账单链接失败', `<div class="query-error"><span>!</span><strong>${esc(error instanceof Error ? error.message : '获取失败')}</strong></div><button onclick="closeModal()" class="btn btn-primary">返回</button>`);
+    } finally {
+        setBusy(false);
+    }
 }
 
 function returnToQuery() {
@@ -709,11 +799,21 @@ function clearSensitiveData() {
     }
     try { sessionStorage.removeItem(RESULT_TRANSFER_KEY); } catch {}
     window.name = '';
+    const actionToken = currentActionToken;
     currentActionToken = null;
     currentSubscription = null;
     currentAccountDiagnostics = null;
     currentMobileBilling = { status: 'unavailable', records: [] };
     currentQueryMode = 'browser-session';
+    if (actionToken) {
+        fetch('/api/action/release', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actionToken }),
+            keepalive: true,
+            cache: 'no-store'
+        }).catch(() => {});
+    }
 }
 
 function setBusy(value) {

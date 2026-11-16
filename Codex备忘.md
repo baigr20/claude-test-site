@@ -1,21 +1,22 @@
 # Codex备忘
 
 - 日期：2026-11-16
-- 任务目标：在 NX 工具箱上线 Grok 订阅查询，本地解析 `grok.com/rest/subscriptions` JSON，并正确处理同一份 JSON 里的 X 订阅。
+- 任务目标：把 ChatGPT 订阅查询改成 checkgpt.plus 的接口。页面可以保持镜花水月，但查询和后续操作都走同一套 API。
 
 ## 结论
 
-- 新页面：`/grok/`。打开官方订阅 JSON，粘贴后只在浏览器计算，不上传，也不走本地代理或现有 Worker。
-- 剩余天数只统计状态为生效且带到期时间的记录。刚过期按剩余 0 天，并写出已过的分钟或小时。
-- X Premium+ 能从同一份 JSON 看出档位和是否生效。`x` 为空对象时没有到期时间，不算剩余天数。X 自己的 GraphQL 要带登录请求头，不能像 Grok 这个地址一样直接打开复制，所以本页不代查 x.com。
-- 未生效记录里的未来账期不计入剩余天数。购买凭证、订阅号和用户 ID 不进入解析结果。
+- 首页只调用 `POST /api/subscription/query`，请求体是 `{ session }`。成功条件是 `ok`、`subscription`，以及长度至少 24 的 `actionToken`。不再在浏览器里直连 chatgpt.com。
+- 结果页用同一个 `actionToken` 调用 `POST /api/subscription/cancel`、`/api/subscription/renew`、`/api/subscription/link` 和 `/api/action/release`。
+- 订阅字段来自 `accounts/check/v4-2023-04-27`：`will_renew`、`purchase_origin_platform`、账期、欠费和到期时间。网页是 1，Google Play 是 2，Apple 是 3。
+- 取消走 `POST /backend-api/subscriptions/cancel`，恢复走 `POST /backend-api/subscriptions/resume`。官方没有确认取消时，返回 `requiresPortal` 和账单地址；不接受的外链会退回 `https://chatgpt.com/account/manage`。
+- 凭证默认放在 Worker 内存，15 分钟失效。设置 `ACTION_TOKEN_SECRET` 后，凭证会加密进 `actionToken`，换一台隔离实例也能继续操作。会话不落盘、不写日志。
 
 ## 修改文件
 
-- `grok/index.html`、`grok/src/parse.js`、`grok/src/app.js`、`grok/src/styles.css`
-- `index.html`、`README.md`
-- `scripts/stamp-assets.mjs`
-- `tests/grok.test.mjs`、`tests/visual.test.mjs`
+- `subscription/src/query.js`、`subscription/src/app.js`、`subscription/src/result.js`
+- `subscription/index.html`、`subscription/result.html`、`index.html`、`README.md`
+- `backend/subscription-worker.mjs`、`backend/action-token.mjs`、`backend/wrangler.subscription.jsonc`
+- `backend/subscription-worker.test.mjs`、`tests/subscription.test.mjs`
 
 ## 运行命令
 
@@ -27,15 +28,15 @@ node --test
 
 ## 测试结果
 
-全量 `node --test`：46 passed, 0 failed。rebase 到远端新增的 2FA 复制按钮和模型指纹检测卡片之后，又按本机工作区重写了资源 `?v=`。
+全量 `node --test`：49 passed, 0 failed。
 
 ## Git
 
-本地提交见本次 `git log -1 --format=%h`。上线需要推到 `baigr20/claude-test-site` 的 `main`，由 GitHub Pages 发布到 `https://claude.nx.kg/grok/`。
+本地提交见本次 `git log -1 --format=%h`。这次没有推远程，也没有重新部署 Worker。线上页面要等 `main` 推送，并且 Worker 重新部署后才会变。
 
 ## 遗留问题
 
-- X 订阅在这份 Grok JSON 里通常没有到期日。若以后拿到 X 订阅管理接口的一份真实响应，可以再加第二种粘贴解析。
+- 生产环境若要跨 Cloudflare 隔离实例取消或恢复续费，需要执行 `wrangler secret put ACTION_TOKEN_SECRET` 后再部署 `backend/wrangler.subscription.jsonc`。
 - 不要提交仓库里未跟踪的 `*.jpg` 和 `GROKBOT-UPLOAD.md`。
 
 ## 回退方法

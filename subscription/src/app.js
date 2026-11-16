@@ -1,37 +1,39 @@
-import { querySubscriptionLocally } from './query.js?v=95e3e08133'
+import { parseSessionInput } from './query.js?v=ffe7d29607'
 
 const RESULT_TRANSFER_KEY = 'checkgpt.result.v2'
 let busy = false
 
 document.addEventListener('DOMContentLoaded', initializeLandingPage)
 
-async function initializeLandingPage() {
-  const status = document.getElementById('service-status')
-  const privacy = document.getElementById('privacy-copy')
-  let proxy = false
-  try {
-    const response = await fetch('/api/health', { cache: 'no-store' })
-    if (response.ok) {
-      const data = await response.json()
-      proxy = Boolean(data?.ok && data.proxy)
-    }
-  } catch {}
-  if (status) {
-    status.classList.remove('checking', 'offline')
-    status.classList.add('online')
-    status.setAttribute('aria-label', proxy
-      ? '同源代理可用，可向 ChatGPT 查询手机号、额度和账单'
-      : '当前没有同源代理，仅在浏览器解析会话')
-    const label = status.querySelector('b')
-    if (label) label.textContent = proxy ? '同源代理可用' : '浏览器本地查询'
-  }
-  if (privacy) {
-    privacy.textContent = proxy
-      ? '查询会经本站同源代理向 ChatGPT 拉取手机号、额度和账单；代理只在内存中使用会话，不落盘、不记日志。'
-      : '当前没有同源代理。会话只在浏览器里解析；跨域拦截时手机号、历史订单和订阅到期时间会是空的。'
-  }
+function initializeLandingPage() {
+  checkServiceStatus()
+  window.setInterval(checkServiceStatus, 30000)
   document.getElementById('query-button')?.addEventListener('click', querySubscription)
   document.getElementById('clear-button')?.addEventListener('click', clearSession)
+}
+
+async function checkServiceStatus() {
+  const status = document.getElementById('service-status')
+  if (!status) return
+  status.classList.remove('online', 'offline')
+  status.classList.add('checking')
+  status.setAttribute('aria-label', '正在确认查询服务状态')
+  try {
+    const response = await fetch('/api/health', { cache: 'no-store', signal: AbortSignal.timeout(4000) })
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok || !result.ok) throw new Error('service unavailable')
+    status.classList.remove('checking', 'offline')
+    status.classList.add('online')
+    status.setAttribute('aria-label', '在线会员查询服务运行正常')
+    const label = status.querySelector('b')
+    if (label) label.textContent = '查询服务在线'
+  } catch {
+    status.classList.remove('checking', 'online')
+    status.classList.add('offline')
+    status.setAttribute('aria-label', '在线会员查询服务暂时无法连接')
+    const label = status.querySelector('b')
+    if (label) label.textContent = '查询服务离线'
+  }
 }
 
 async function querySubscription() {
@@ -39,13 +41,27 @@ async function querySubscription() {
   const input = document.getElementById('session-json').value.trim()
   if (!input) return showInputError('请先粘贴 Session JSON')
 
+  let session
+  try { session = parseSessionInput(input) }
+  catch (error) {
+    showInputError(error.message)
+    return
+  }
+
   setBusy(true)
-  showInputLoading('正在读取订阅信息')
+  showInputLoading('正在读取订阅与账单信息')
   try {
-    const result = await querySubscriptionLocally(input)
-    if (!result?.ok || !result.subscription || !result.actionToken) {
-      throw new Error(result?.message || '查询失败，请检查 Session 是否有效')
+    const response = await fetch('/api/subscription/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session }),
+      cache: 'no-store'
+    })
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok || !result.ok || !result.subscription || typeof result.actionToken !== 'string' || result.actionToken.length < 24) {
+      throw new Error(result.message || '查询失败，请检查 Session 是否有效')
     }
+
     const transfer = JSON.stringify({
       type: 'chatgpt-billing-result-v2',
       createdAt: Date.now(),
@@ -53,10 +69,11 @@ async function querySubscription() {
       subscription: result.subscription,
       accountDiagnostics: result.accountDiagnostics || null,
       mobileBilling: result.mobileBilling || { status: 'unavailable', records: [] },
-      queryMode: result.queryMode || 'browser-session'
+      queryMode: result.queryMode || 'unknown'
     })
     try { sessionStorage.setItem(RESULT_TRANSFER_KEY, transfer) } catch {}
     window.name = transfer
+    session = null
     document.getElementById('session-json').value = ''
     window.location.assign('./result.html')
   } catch (error) {
@@ -72,7 +89,7 @@ function showInputLoading(message) {
   document.getElementById('input-status').innerHTML = `
         <div class="input-message loading">
             <span class="query-spinner" aria-hidden="true"></span>
-            <div><strong>${esc(message)}</strong><p>先尝试同源代理；没有代理时再在浏览器里解析会话并直连 ChatGPT。</p></div>
+            <div><strong>${esc(message)}</strong><p>正在分别核对网页会员和移动端账单。</p></div>
         </div>`
 }
 
@@ -80,7 +97,7 @@ function showInputError(message) {
   document.getElementById('input-status').innerHTML = `
         <div class="input-message error">
             <span>!</span>
-            <div><strong>${esc(message)}</strong><p>支持完整或精简 Session JSON。有同源代理时只在内存中转发，不落盘。</p></div>
+            <div><strong>${esc(message)}</strong><p>支持完整或精简 Session JSON；需要浏览器会话的操作请补充 sessionToken。</p></div>
         </div>`
 }
 

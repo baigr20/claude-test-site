@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createActionStore } from './action-token.mjs'
 import worker, { allowedOrigin, handleQuery, json } from './subscription-worker.mjs'
 
 function jwtWith(payload) {
@@ -95,9 +96,182 @@ test('proxy maps ChatGPT payloads including phone, invoices and billing time', a
     assert.equal(result.accountDiagnostics.webInvoices.length, 1)
     assert.equal(result.accountDiagnostics.sources.me, 'ok')
     assert.notEqual(result.subscription.expireTime, new Date(2000000000 * 1000).toISOString())
+    assert.equal(typeof result.actionToken, 'string')
+    assert.ok(result.actionToken.length >= 24)
+    const leaked = JSON.stringify(result)
+    assert.equal(leaked.includes(demoToken), false)
+
+    const secret = 'worker-test-secret'
+    const env = { ACTION_TOKEN_SECRET: secret }
+    let cancelled = false
+    let renewed = false
+    const calls = []
+    globalThis.fetch = async (url, init) => {
+      const path = String(url)
+      calls.push({ path, method: init?.method || 'GET', body: init?.body || '' })
+      if (path.includes('/subscriptions/cancel')) {
+        cancelled = true
+        return new Response(null, { status: 204 })
+      }
+      if (path.includes('/subscriptions/resume')) {
+        renewed = true
+        return new Response(null, { status: 204 })
+      }
+      if (path.includes('/payments/customer_portal')) {
+        return Response.json({ url: 'https://billing.stripe.com/p/session/test' })
+      }
+      if (path.includes('/accounts/check/')) {
+        return Response.json({
+          accounts: {
+            default: {
+              account: { plan_type: 'plus', account_id: 'acc-1' },
+              entitlement: {
+                has_active_subscription: true,
+                subscription_plan: 'chatgptplusplan',
+                expires_at: '2026-12-01T00:00:00.000Z',
+                billing_period: 'monthly',
+                is_delinquent: false
+              },
+              last_active_subscription: {
+                purchase_origin_platform: 'chatgpt_web',
+                will_renew: renewed ? true : !cancelled
+              }
+            }
+          }
+        })
+      }
+      return Response.json({})
+    }
+
+    const queried = await worker.fetch(new Request('https://claude.nx.kg/api/subscription/query', {
+      method: 'POST',
+      headers: { origin: 'https://claude.nx.kg', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        session: {
+          accessToken: demoToken,
+          sessionToken: 'session-secret-value',
+          account: { planType: 'plus' }
+        }
+      })
+    }), env)
+    const queriedBody = await queried.json()
+    assert.equal(queried.status, 200)
+    assert.equal(queriedBody.subscription.autoRenew, true)
+    assert.equal(queriedBody.subscription.payChannelType, 1)
+    assert.equal(JSON.stringify(queriedBody).includes(demoToken), false)
+    assert.equal(JSON.stringify(queriedBody).includes('session-secret-value'), false)
+
+    const cancelResponse = await worker.fetch(new Request('https://claude.nx.kg/api/subscription/cancel', {
+      method: 'POST',
+      headers: { origin: 'https://claude.nx.kg', 'content-type': 'application/json' },
+      body: JSON.stringify({ actionToken: queriedBody.actionToken })
+    }), env)
+    const cancelBody = await cancelResponse.json()
+    assert.equal(cancelResponse.status, 200)
+    assert.equal(cancelBody.verified, true)
+    assert.equal(cancelBody.subscription.autoRenew, false)
+    const cancelCall = calls.find((call) => call.path.includes('/subscriptions/cancel'))
+    assert.equal(JSON.parse(cancelCall.body).account_id, 'acc-1')
+
+    const portalResponse = await worker.fetch(new Request('https://claude.nx.kg/api/subscription/link', {
+      method: 'POST',
+      headers: { origin: 'https://claude.nx.kg', 'content-type': 'application/json' },
+      body: JSON.stringify({ actionToken: queriedBody.actionToken })
+    }), env)
+    const portalBody = await portalResponse.json()
+    assert.equal(portalBody.ok, true)
+    assert.equal(portalBody.url, 'https://billing.stripe.com/p/session/test')
+    assert.equal(portalBody.externalPlatform, false)
+
+    const renewResponse = await worker.fetch(new Request('https://claude.nx.kg/api/subscription/renew', {
+      method: 'POST',
+      headers: { origin: 'https://claude.nx.kg', 'content-type': 'application/json' },
+      body: JSON.stringify({ actionToken: queriedBody.actionToken })
+    }), env)
+    const renewBody = await renewResponse.json()
+    assert.equal(renewResponse.status, 200)
+    assert.equal(renewBody.verified, true)
+    assert.equal(renewBody.subscription.autoRenew, true)
+
+    const releaseResponse = await worker.fetch(new Request('https://claude.nx.kg/api/action/release', {
+      method: 'POST',
+      headers: { origin: 'https://claude.nx.kg', 'content-type': 'application/json' },
+      body: JSON.stringify({ actionToken: queriedBody.actionToken })
+    }), env)
+    assert.equal((await releaseResponse.json()).ok, true)
+    const expired = await worker.fetch(new Request('https://claude.nx.kg/api/subscription/cancel', {
+      method: 'POST',
+      headers: { origin: 'https://claude.nx.kg', 'content-type': 'application/json' },
+      body: JSON.stringify({ actionToken: queriedBody.actionToken })
+    }), env)
+    assert.equal(expired.status, 401)
+
+    const portalEnv = { ACTION_TOKEN_SECRET: 'portal-fallback-secret' }
+    globalThis.fetch = async (url) => {
+      const path = String(url)
+      if (path.includes('/subscriptions/cancel')) return Response.json({ error: 'needs-portal' }, { status: 400 })
+      if (path.includes('/payments/customer_portal')) return Response.json({ url: 'https://evil.example/phish' })
+      if (path.includes('/accounts/check/')) {
+        return Response.json({
+          accounts: {
+            default: {
+              entitlement: { has_active_subscription: true, subscription_plan: 'chatgptplusplan', expires_at: '2026-12-01T00:00:00.000Z' },
+              last_active_subscription: { purchase_origin_platform: 'chatgpt_web', will_renew: true }
+            }
+          }
+        })
+      }
+      return Response.json({})
+    }
+    const portalQuery = await worker.fetch(new Request('https://claude.nx.kg/api/subscription/query', {
+      method: 'POST',
+      headers: { origin: 'https://claude.nx.kg', 'content-type': 'application/json' },
+      body: JSON.stringify({ session: { accessToken: demoToken } })
+    }), portalEnv)
+    const portalQueryBody = await portalQuery.json()
+    const portalCancel = await worker.fetch(new Request('https://claude.nx.kg/api/subscription/cancel', {
+      method: 'POST',
+      headers: { origin: 'https://claude.nx.kg', 'content-type': 'application/json' },
+      body: JSON.stringify({ actionToken: portalQueryBody.actionToken })
+    }), portalEnv)
+    const fallbackBody = await portalCancel.json()
+    assert.equal(fallbackBody.ok, true)
+    assert.equal(fallbackBody.requiresPortal, true)
+    assert.equal(fallbackBody.url, 'https://chatgpt.com/account/manage')
+    assert.equal(JSON.stringify(fallbackBody).includes(demoToken), false)
   } finally {
     globalThis.fetch = originalFetch
   }
+})
+
+test('sealed action tokens expire and release without keeping a second copy', async () => {
+  const store = createActionStore()
+  const secret = 'unit-secret'
+  const expired = await store.issue({ accessToken: 'a'.repeat(20), accountId: 'acc' }, { secret, now: 1000, ttlMs: 50 })
+  assert.equal((await store.read(expired, { secret, now: 1020 })).accessToken, 'a'.repeat(20))
+  assert.equal(await store.read(expired, { secret, now: 1060 }), null)
+  const live = await store.issue({ accessToken: 'b'.repeat(20), accountId: 'acc' }, { secret, now: 1000, ttlMs: 500 })
+  await store.release(live, { secret, now: 1100 })
+  assert.equal(await store.read(live, { secret, now: 1200 }), null)
+  const memoryToken = await store.issue({ accessToken: 'mem-token-value', accountId: 'acc' }, { now: 1000, ttlMs: 100 })
+  assert.equal(memoryToken.includes('mem-token-value'), false)
+  assert.equal((await store.read(memoryToken, { now: 1010 })).accountId, 'acc')
+  await store.release(memoryToken, { now: 1010 })
+  assert.equal(await store.read(memoryToken, { now: 1020 }), null)
+})
+
+test('unknown action routes stay closed', async () => {
+  const missing = await worker.fetch(new Request('https://claude.nx.kg/api/subscription/nope', {
+    method: 'POST',
+    headers: { origin: 'https://claude.nx.kg', 'content-type': 'application/json' },
+    body: '{}'
+  }))
+  assert.equal(missing.status, 404)
+  const wrongMethod = await worker.fetch(new Request('https://claude.nx.kg/api/subscription/cancel', {
+    method: 'GET',
+    headers: { origin: 'https://claude.nx.kg' }
+  }))
+  assert.equal(wrongMethod.status, 405)
 })
 
 test('json helper is same-origin CORS for the toolbox', () => {

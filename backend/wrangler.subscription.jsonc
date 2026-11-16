@@ -1,4 +1,5 @@
 {
+  // Set ACTION_TOKEN_SECRET with `wrangler secret put` so cancel, renew and billing links work across isolates.
   "name": "claude-nx-subscription",
   "main": "subscription-worker.mjs",
   "compatibility_date": "2026-10-12",
