@@ -655,7 +655,7 @@ async function cancelRenewal() {
     setBusy(true);
     showModal('正在关闭自动续费', '<div class="query-progress"><span class="query-spinner"></span><strong>正在联系 ChatGPT 处理</strong></div>');
     try {
-        const response = await fetch('/api/subscription/cancel', {
+        const response = await fetch('https://claude-nx-subscription.bai1517735291.workers.dev/api/subscription/cancel', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ actionToken }),
@@ -728,7 +728,7 @@ async function restoreRenewal() {
     setBusy(true);
     showModal('正在恢复自动续费', '<div class="query-progress"><span class="query-spinner"></span><strong>正在联系 ChatGPT 处理并核对续费状态</strong></div>');
     try {
-        const response = await fetch('/api/subscription/renew', {
+        const response = await fetch('https://claude-nx-subscription.bai1517735291.workers.dev/api/subscription/renew', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ actionToken }),
@@ -764,7 +764,7 @@ async function requestBillingLink() {
     setBusy(true);
     showModal('正在获取账单入口', '<div class="query-progress"><span class="query-spinner"></span><strong>正在创建官方账单链接</strong></div>');
     try {
-        const response = await fetch('/api/subscription/link', {
+        const response = await fetch('https://claude-nx-subscription.bai1517735291.workers.dev/api/subscription/link', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ actionToken: currentActionToken }),
@@ -806,7 +806,7 @@ function clearSensitiveData() {
     currentMobileBilling = { status: 'unavailable', records: [] };
     currentQueryMode = 'browser-session';
     if (actionToken) {
-        fetch('/api/action/release', {
+        fetch('https://claude-nx-subscription.bai1517735291.workers.dev/api/action/release', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ actionToken }),

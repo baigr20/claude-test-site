@@ -19,7 +19,7 @@ async function checkServiceStatus() {
   status.classList.add('checking')
   status.setAttribute('aria-label', '正在确认查询服务状态')
   try {
-    const response = await fetch('/api/health', { cache: 'no-store', signal: AbortSignal.timeout(4000) })
+    const response = await fetch('https://claude-nx-subscription.bai1517735291.workers.dev/api/health', { cache: 'no-store', signal: AbortSignal.timeout(4000) })
     const result = await response.json().catch(() => ({}))
     if (!response.ok || !result.ok) throw new Error('service unavailable')
     status.classList.remove('checking', 'offline')
@@ -51,7 +51,7 @@ async function querySubscription() {
   setBusy(true)
   showInputLoading('正在读取订阅与账单信息')
   try {
-    const response = await fetch('/api/subscription/query', {
+    const response = await fetch('https://claude-nx-subscription.bai1517735291.workers.dev/api/subscription/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session }),

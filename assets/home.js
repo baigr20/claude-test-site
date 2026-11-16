@@ -1,4 +1,4 @@
-import { toolMatchesQuery } from './search.js?v=7739ce6fea'
+import { toolMatchesQuery } from './search.js?v=42dafcea25'
 
 const cards = [...document.querySelectorAll('[data-tool-card]')]
 const empty = document.getElementById('emptyState')

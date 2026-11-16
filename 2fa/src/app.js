@@ -2,7 +2,7 @@ import {
   generateTotpFromInput,
   parseTotpInput,
   remainingSeconds
-} from './totp.js?v=1f9301642b'
+} from './totp.js?v=789b2de7d5'
 
 const el = (id) => document.getElementById(id)
 
