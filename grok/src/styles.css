@@ -1,0 +1,111 @@
+/* Grok subscription checker. Colors come from /assets/site.css. */
+
+.tool-page {
+  padding: 22px 0 8px;
+  display: grid;
+  gap: 18px;
+}
+
+.tool-intro { max-width: 44rem; }
+.tool-intro > span {
+  display: block;
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+.tool-intro h1 {
+  margin: 6px 0 0;
+  font-size: clamp(26px, 4vw, 34px);
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+.tool-intro p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.panel {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 14px;
+}
+.panel h2 {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.secret-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 180px;
+  padding: 12px 14px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background: color-mix(in srgb, var(--bg) 72%, var(--bg-elev));
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow-x: auto;
+}
+.secret-input:focus { border-color: var(--accent); outline: none; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions .button { text-decoration: none; }
+
+.status-text { margin: 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.status-text[data-kind="error"] { color: var(--danger); }
+.status-text[data-kind="ok"] { color: var(--ok); }
+
+.headline {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+.facts { display: grid; gap: 8px; margin: 0; }
+.facts div { display: grid; grid-template-columns: 5.5em 1fr; gap: 8px; }
+.facts dt { margin: 0; color: var(--muted); font-size: 13px; }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+
+.rows { display: grid; gap: 10px; }
+.sub-row {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background: color-mix(in srgb, var(--bg) 55%, var(--bg-elev));
+}
+.sub-row.is-primary { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.sub-row h3 { margin: 0; font-size: 15px; }
+.sub-row p { margin: 4px 0 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+
+.help-list {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--muted);
+  font-size: 14px;
+}
+.help-list li { margin: 0 0 6px; }
+
+@media (max-width: 800px) {
+  .tool-grid { grid-template-columns: 1fr; }
+  .facts div { grid-template-columns: 1fr; gap: 0; }
+}

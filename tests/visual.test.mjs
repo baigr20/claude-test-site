@@ -55,11 +55,12 @@ test('theme defaults to light unless the user saved a choice', () => {
 test('homepage lists both tools and a clearly labeled shop friend link', () => {
   assert.match(home, /href="\/2fa\/"/)
   assert.match(home, /href="\/subscription\/"/)
+  assert.match(home, /href="\/grok\/"/)
   assert.match(home, /data-category="security"/)
   assert.match(home, /data-category="query"/)
   assert.match(home, /data-filter="security"/)
   assert.match(home, /data-filter="query"/)
-  assert.match(home, /现有 4 个工具/)
+  assert.match(home, /现有 5 个工具/)
   assert.match(home, /href="https:\/\/lm\.ikale\.io\/"/)
   assert.match(home, /href="https:\/\/lm\.ikale\.io\/"[^>]*target="_blank"/)
   assert.match(home, /href="https:\/\/lm\.ikale\.io\/"[^>]*rel="noopener noreferrer"/)

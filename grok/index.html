@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grok 订阅查询</title>
+    <meta name="description" content="粘贴 grok.com 订阅 JSON，在浏览器本地查看套餐、到期时间和剩余天数。JSON 不会上传。" />
+    <meta name="theme-color" content="#3aa888" />
+    <link rel="icon" href="/assets/favicon.svg?v=9ff6e7de59" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/site.css?v=6f15b54602" />
+    <link rel="stylesheet" href="./src/styles.css?v=3366778b6e" />
+    <meta name="referrer" content="no-referrer" />
+    <script src="/assets/theme.js?v=097d068ec0"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">跳到内容</a>
+    <header class="site-header">
+      <div class="wrap header-row">
+        <a class="brand" href="/">
+          <span class="mark" aria-hidden="true">NX</span>
+          <span class="brand-text"><strong>NX 工具箱</strong><small>claude.nx.kg</small></span>
+        </a>
+        <div class="header-actions">
+          <button class="icon-btn" id="themeToggle" type="button" onclick="toggleToolboxTheme()">◐</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="wrap tool-page">
+      <header class="tool-intro">
+        <span>本地处理 · 不上传 JSON</span>
+        <h1>Grok 订阅查询</h1>
+        <p>打开已登录的 grok.com 订阅 JSON，把整页贴回来。本页只在浏览器里计算剩余天数，不会把内容发到本站。</p>
+      </header>
+
+      <div class="callout callout--warn">
+        <strong>这份 JSON 含购买凭证。</strong>
+        不要把它发给别人。本页不写入浏览器存储，也不代你访问 grok.com 或 x.com。用完请清空。
+      </div>
+
+      <div class="tool-grid">
+        <section class="panel">
+          <div>
+            <span class="kicker">输入</span>
+            <h2>订阅 JSON</h2>
+          </div>
+          <form id="checkForm">
+            <div class="actions">
+              <a class="button button--solid" href="https://grok.com/rest/subscriptions" target="_blank" rel="noopener noreferrer">打开订阅 JSON</a>
+            </div>
+            <label class="kicker" for="payload">粘贴整页内容</label>
+            <textarea id="payload" class="secret-input" spellcheck="false" autocomplete="off" placeholder='{"subscriptions":[...]}'></textarea>
+            <div class="actions">
+              <button id="checkButton" class="button button--solid" type="submit">计算剩余天数</button>
+              <button id="clearAll" class="button button--quiet" type="button">清空</button>
+            </div>
+            <p id="statusText" class="status-text">等待粘贴</p>
+          </form>
+        </section>
+
+        <section class="panel" id="resultPanel" hidden aria-live="polite">
+          <div>
+            <span class="kicker">结果</span>
+            <h2 id="headline" class="headline">剩余天数</h2>
+          </div>
+          <p id="headlineDetail" class="status-text"></p>
+          <dl id="summary" class="facts"></dl>
+          <div id="rows" class="rows"></div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div>
+          <span class="kicker">说明</span>
+          <h2>怎么算</h2>
+        </div>
+        <ul class="help-list">
+          <li>剩余天数只看状态为生效、并且带到期时间的记录。不足一天按 1 天向上取整；刚过期显示剩余 0 天。</li>
+          <li>同一份 JSON 里的 X 订阅会显示档位和是否生效。X 对象如果是空的，就没有到期时间，不算剩余天数。</li>
+          <li>未生效记录里的未来账期不计入剩余天数。主套餐名称来自 dominantPlan。</li>
+          <li>X 自己的订阅接口要带登录请求头，不能像这个 Grok 地址一样直接打开复制，所以本页不代查 x.com。</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>NX 工具箱是独立的实用页面，不是 xAI、X 或其他厂商的官方站点。</p>
+        <p>订阅 JSON 在浏览器本地解析。请不要把购买凭证发到聊天或不信任的环境；用完后请清空。</p>
+      </div>
+    </footer>
+    <script type="module" src="./src/app.js?v=7768ac6f8e"></script>
+  </body>
+</html>

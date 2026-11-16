@@ -1,24 +1,21 @@
 # Codex备忘
 
-- 日期：2026-11-15
-- 任务目标：弄清线上订阅查询「很多结果没显示」是页面隐藏还是接口没返回，并尽量补齐手机号、历史订单和时间，使结果更接近 checkgpt.plus。
+- 日期：2026-11-16
+- 任务目标：在 NX 工具箱上线 Grok 订阅查询，本地解析 `grok.com/rest/subscriptions` JSON，并正确处理同一份 JSON 里的 X 订阅。
 
 ## 结论
 
-线上空白主要是**接口没有返回**，少量是页面以前把空值藏掉。
-
-- 原站 checkgpt.plus 有自己的后端，用 accessToken + session cookie 调 chatgpt.com/backend-api（含 `/me`、账单发票、订阅周期）。
-- GitHub Pages 静态站没有同源代理时，浏览器跨域读不到 chatgpt.com，手机号、额度、历史订单、订阅到期时间都到不了前端。
-- JWT `exp` / 会话 `expires` 是 token 有效期，不能标成套餐「到期时间」。Free 账号本来也可能没有账单到期时间。
-- 本机 Python 复刻能从 `/me` 拿到手机号；invoices/subscriptions 对 Free 账号仍可能失败。
+- 新页面：`/grok/`。打开官方订阅 JSON，粘贴后只在浏览器计算，不上传，也不走本地代理或现有 Worker。
+- 剩余天数只统计状态为生效且带到期时间的记录。刚过期按剩余 0 天，并写出已过的分钟或小时。
+- X Premium+ 能从同一份 JSON 看出档位和是否生效。`x` 为空对象时没有到期时间，不算剩余天数。X 自己的 GraphQL 要带登录请求头，不能像 Grok 这个地址一样直接打开复制，所以本页不代查 x.com。
+- 未生效记录里的未来账期不计入剩余天数。购买凭证、订阅号和用户 ID 不进入解析结果。
 
 ## 修改文件
 
-- `subscription/src/query.js`：先试 `POST /api/subscription/query`；失败再直连 chatgpt.com；记录每个接口来源；`expireTime` 只用账单周期。
-- `subscription/src/result.js`：始终显示手机号、历史订单、会话有效期、账号创建；新增「数据来源」区块。
-- `subscription/src/styles.css`、`subscription/src/app.js`、`subscription/index.html`、`subscription/result.html`
-- `backend/subscription-worker.mjs`、`backend/wrangler.subscription.jsonc`、`backend/subscription-worker.test.mjs`
-- `index.html`、`README.md`、`tests/subscription.test.mjs`
+- `grok/index.html`、`grok/src/parse.js`、`grok/src/app.js`、`grok/src/styles.css`
+- `index.html`、`README.md`
+- `scripts/stamp-assets.mjs`
+- `tests/grok.test.mjs`、`tests/visual.test.mjs`
 
 ## 运行命令
 
@@ -30,17 +27,15 @@ node --test
 
 ## 测试结果
 
-全量 `node --test`：41 passed, 0 failed。
+全量 `node --test`：45 passed, 0 failed。
 
 ## Git
 
-本地提交见本次 `git log -1 --format=%h`。本机 GitHub 凭证是 baigr16，仓库属于 baigr20，`git push origin main` 会 403。上线需要 baigr20 或 GrokBot 推送，并把 Worker 绑到 `claude.nx.kg/api/*`。
+本地提交见本次 `git log -1 --format=%h`。上线需要推到 `baigr20/claude-test-site` 的 `main`，由 GitHub Pages 发布到 `https://claude.nx.kg/grok/`。
 
 ## 遗留问题
 
-- 未部署 Worker 时，线上仍只有会话 JSON 里的套餐、邮箱、会话有效期、账号创建；手机号和历史订单会显示「本次未从接口取到」，数据来源会写明跨域拦截。
-- Free 账号即使走代理，invoices/subscriptions 仍可能没有账单到期时间和订单。
-- 取消/恢复续费仍打开官方账单页，本站不代操作。
+- X 订阅在这份 Grok JSON 里通常没有到期日。若以后拿到 X 订阅管理接口的一份真实响应，可以再加第二种粘贴解析。
 - 不要提交仓库里未跟踪的 `*.jpg` 和 `GROKBOT-UPLOAD.md`。
 
 ## 回退方法
