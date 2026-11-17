@@ -1,6 +1,49 @@
 # Codex备忘
 
 - 日期：2026-11-17
+- 任务目标：把 `claude.nx.kg/subscription/` 改成 NX 工具箱薄荷绿风格，和首页、Grok、Gmail 一致。
+
+## 结论
+
+- 查询页和结果页加上 `site-header`、主题开关和 `site.css` 代币，不再用镜花水月独立品牌视觉。
+- 查询接口仍走 `https://api.aideal.vip/subscription`。没有改 Worker，也没有重新部署 aideal 静态页。
+- `api.aideal.vip/subscription/` 仍是上一版镜花水月页面，直到下次跑 `deploy_subscription.py`。
+
+## 修改文件
+
+- `subscription/index.html`、`subscription/result.html`、`subscription/src/styles.css`
+- `subscription/src/app.js`、`subscription/src/result.js`
+- `tests/subscription.test.mjs`、`README.md`
+
+## 运行命令
+
+```powershell
+Set-Location 'D:\gitdir\claude-test-site'
+node scripts/stamp-assets.mjs
+node --test tests/subscription.test.mjs tests/visual.test.mjs tests/assets.test.mjs backend/subscription-worker.test.mjs
+```
+
+## 测试结果
+
+相关测试 20 passed。stamp-assets 只写了 `subscription/index.html` 和 `result.html`。
+
+## Git
+
+本地提交后推送 `main`。Pages 更新 `https://claude.nx.kg/subscription/`。
+
+## 遗留问题
+
+- 未在真实浏览器里点完查询流程。本机没有浏览器自动化工具。
+- 不要提交 `_checkgpt_plus_dump/`、`*.jpg`、`GROKBOT-UPLOAD.md`。
+- 不要打印 `/opt/subscription-query/.env`。
+
+## 回退方法
+
+```powershell
+& 'D:\Downloads\cmder\vendor\git-for-windows\cmd\git.exe' -C 'D:\gitdir\claude-test-site' revert HEAD
+```
+
+- 日期：2026-11-17
 - 任务目标：把 ChatGPT 订阅查询放到 `api.aideal.vip/subscription/`，避开 Cloudflare Worker 拦截。
 
 ## 结论

@@ -1,73 +1,83 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="镜花水月：查询 ChatGPT 套餐、到期时间、剩余额度和自动续费状态。">
-    <title>镜花水月｜ChatGPT 订阅查询</title>
-    <link rel="icon" href="/assets/favicon.svg?v=9ff6e7de59" type="image/svg+xml">
-    <link rel="stylesheet" href="./src/styles.css?v=3aa25d77b9">
-    <meta name="referrer" content="no-referrer">
-</head>
-<body>
-    <header class="site-bar">
-        <a class="brand" href="/subscription/" aria-label="镜花水月首页">
-            <span class="brand-mark" aria-hidden="true">镜</span>
-            <span><strong>镜花水月</strong><small>ChatGPT Subscription</small></span>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ChatGPT 订阅查询</title>
+    <meta name="description" content="粘贴 chatgpt.com 会话 JSON，查询套餐、手机号、订单、额度和自动续费。" />
+    <meta name="theme-color" content="#3aa888" />
+    <link rel="icon" href="/assets/favicon.svg?v=9ff6e7de59" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/site.css?v=6f15b54602" />
+    <link rel="stylesheet" href="./src/styles.css?v=2f925c83f4" />
+    <meta name="referrer" content="no-referrer" />
+    <script src="/assets/theme.js?v=097d068ec0"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">跳到内容</a>
+    <header class="site-header">
+      <div class="wrap header-row">
+        <a class="brand" href="/">
+          <span class="mark" aria-hidden="true">NX</span>
+          <span class="brand-text"><strong>NX 工具箱</strong><small>claude.nx.kg</small></span>
         </a>
-        <div id="service-status" class="public-badge service-status checking" role="status" aria-live="polite" aria-label="正在确认查询服务状态">
-            <span aria-hidden="true"></span><b>在线会员查询</b>
+        <div class="header-actions">
+          <div id="service-status" class="service-status checking" role="status" aria-live="polite" aria-label="正在确认查询服务状态">
+            <span aria-hidden="true"></span><b>在线查询</b>
+          </div>
+          <button class="icon-btn" id="themeToggle" type="button" onclick="toggleToolboxTheme()">◐</button>
         </div>
+      </div>
     </header>
 
-    <main class="query-shell">
-        <section class="intro-panel" aria-labelledby="page-title">
-            <div class="eyebrow">以会话为引 · 照见订阅全貌</div>
-            <h1 id="page-title">一镜照见<br><em>你的订阅全貌</em></h1>
-            <p>套餐、额度、到期和续费，一次查询便清清楚楚。</p>
-            <div class="trust-list" aria-label="查询内容">
-                <div><span aria-hidden="true">一</span><strong>套餐全貌</strong><small>当前方案与到期时间</small></div>
-                <div><span aria-hidden="true">览</span><strong>余量清晰</strong><small>Codex 与功能剩余额度</small></div>
-                <div><span aria-hidden="true">明</span><strong>续费有数</strong><small>续费状态与官方账单入口</small></div>
-            </div>
+    <main id="main" class="wrap tool-page">
+      <header class="tool-intro">
+        <span>在线查询 · 会话不落盘</span>
+        <h1>ChatGPT 订阅查询</h1>
+        <p>登录自己的 ChatGPT 后打开会话数据页面，把 JSON 贴回来。本页经查询节点核对套餐、额度、到期和续费，会话只在内存中短暂使用。</p>
+      </header>
+
+      <div class="callout callout--warn">
+        <strong>这份 JSON 含登录凭证。</strong>
+        不要把它发给别人。查询完成后输入会自动清空；取消、恢复续费和账单入口走本站接口，会话不写入磁盘。
+      </div>
+
+      <div class="tool-grid">
+        <section class="panel">
+          <div>
+            <span class="kicker">输入</span>
+            <h2 id="query-title">会话 JSON</h2>
+          </div>
+          <p class="help-copy">打开 <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noopener noreferrer">会话数据页面</a>，粘贴完整内容，或只保留 accessToken、sessionToken 的精简 JSON。仅有 accessToken 时可尝试查询，需要浏览器会话的操作仍需 sessionToken。</p>
+          <label class="kicker" for="session-json">粘贴 Session JSON</label>
+          <textarea id="session-json" class="secret-input" spellcheck="false" autocomplete="off" placeholder='{"accessToken":"...","sessionToken":"..."}' rows="8"></textarea>
+          <div id="input-status" class="input-status" aria-live="polite"></div>
+          <div class="actions">
+            <button id="query-button" class="button button--solid" type="button">查询订阅</button>
+            <button id="clear-button" class="button button--quiet" type="button">清空</button>
+          </div>
+          <p id="privacy-copy" class="status-text">查询完成后，本页输入会自动清空。</p>
         </section>
 
-        <section class="query-card" aria-labelledby="query-title">
-            <div class="step-heading">
-                <span>01</span>
-                <div>
-                    <p>开启水镜</p>
-                    <h2 id="query-title">粘贴会话数据</h2>
-                </div>
-            </div>
-
-            <p class="query-help">登录自己的 ChatGPT 后打开 <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noreferrer">会话数据页面 ↗</a>，粘贴完整内容，或只保留 accessToken、sessionToken 的精简 JSON。无需复制营销、统计等附加字段；仅有 accessToken 时可尝试查询，需要浏览器会话的操作仍需 sessionToken。</p>
-
-            <label class="session-field" for="session-json">
-                <span>会话数据</span>
-                <textarea id="session-json" spellcheck="false" autocomplete="off" placeholder='支持完整 Session，或 {"accessToken":"...","sessionToken":"..."} 精简格式' rows="8"></textarea>
-            </label>
-
-            <div id="input-status" class="input-status" aria-live="polite"></div>
-
-            <div class="query-actions">
-                <button id="clear-button" class="button button-ghost" type="button">清空</button>
-                <button id="query-button" class="button button-primary" type="button">
-                    <span>照见我的订阅</span><b aria-hidden="true">→</b>
-                </button>
-            </div>
-
-            <div class="privacy-line"><span aria-hidden="true">●</span> <span id="privacy-copy">查询完成后，本页输入会自动清空。</span></div>
+        <section class="panel">
+          <div>
+            <span class="kicker">说明</span>
+            <h2>这次能查到什么</h2>
+          </div>
+          <ul class="help-list">
+            <li>套餐、到期时间和自动续费状态。</li>
+            <li>Codex 剩余额度和 ChatGPT 功能次数。</li>
+            <li>卡付账单入口；Apple / Google 订阅请到原支付平台管理。</li>
+          </ul>
         </section>
+      </div>
     </main>
 
-    <section class="source-strip" aria-label="可以查询的内容">
-        <div><span class="source-icon source-openai">01</span><p><strong>套餐与有效期</strong><small>确认当前会员是否仍然有效</small></p></div>
-        <div><span class="source-icon source-apple">02</span><p><strong>续费与账单</strong><small>查看续费状态和官方管理入口</small></p></div>
-        <div><span class="source-icon source-google">03</span><p><strong>额度与恢复时间</strong><small>查看本次能够确认的功能余量</small></p></div>
-    </section>
-
-    <footer class="site-footer">镜花水月 · 看清每一次订阅</footer>
-    <script type="module" src="./src/app.js?v=662ab93d5d"></script>
-</body>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>NX 工具箱是独立的实用页面，不是 OpenAI 或其他厂商的官方站点。</p>
+        <p>ChatGPT 订阅查询会经本站接口向 ChatGPT 核对，会话不落盘。请不要把真实会话发到聊天或不信任的环境。</p>
+      </div>
+    </footer>
+    <script type="module" src="./src/app.js?v=ecae0e931e"></script>
+  </body>
 </html>

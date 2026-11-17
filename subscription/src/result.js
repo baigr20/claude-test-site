@@ -67,7 +67,7 @@ function renderUnavailable() {
             <span>!</span>
             <strong>查询数据已清除</strong>
             <p>为保护你的会话数据，结果页刷新或重新打开后不会保留上一次结果。</p>
-            <button type="button" class="button button-primary" onclick="returnToQuery()"><span>返回重新查询</span><b aria-hidden="true">→</b></button>
+            <button type="button" class="button button--solid" onclick="returnToQuery()">返回重新查询</button>
         </div>`;
 }
 
@@ -793,10 +793,10 @@ function remainingDays(value) {
 
 function showModal(title, body) {
     const modal = document.getElementById('modal');
-    if (modal.style.display === 'none') lastFocusedElement = document.activeElement;
+    if (!modal.classList.contains('is-visible')) lastFocusedElement = document.activeElement;
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-body').innerHTML = body;
-    modal.style.display = 'block';
+    modal.classList.add('is-visible');
     modal.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(() => modal.querySelector('.modal-content')?.focus());
 }
@@ -804,7 +804,7 @@ function showModal(title, body) {
 function closeModal(force = false) {
     if (busy && !force) return;
     const modal = document.getElementById('modal');
-    modal.style.display = 'none';
+    modal.classList.remove('is-visible');
     modal.setAttribute('aria-hidden', 'true');
     const focusTarget = lastFocusedElement && document.contains(lastFocusedElement) && !lastFocusedElement.disabled
         ? lastFocusedElement
@@ -815,7 +815,7 @@ function closeModal(force = false) {
 
 function handleModalKeydown(event) {
     const modal = document.getElementById('modal');
-    if (!modal || modal.style.display === 'none') return;
+    if (!modal || !modal.classList.contains('is-visible')) return;
     if (event.key === 'Escape') {
         event.preventDefault();
         closeModal();
@@ -848,9 +848,8 @@ function handleModalKeydown(event) {
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
-    toast.className = `toast ${type}`;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    toast.className = `toast ${type} is-visible`;
+    setTimeout(() => { toast.classList.remove('is-visible'); }, 3000);
 }
 
 function copyModalCode() {

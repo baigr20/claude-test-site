@@ -46,7 +46,7 @@ async function querySubscription() {
   }
 
   setBusy(true)
-  showInputLoading('正在读取订阅与账单信息')
+  showInputLoading('正在查询订阅与账单信息')
   try {
     const response = await fetch(`${WORKER_ORIGIN}/api/subscription/query`, {
       method: 'POST',
@@ -86,7 +86,7 @@ function showInputLoading(message) {
   document.getElementById('input-status').innerHTML = `
         <div class="input-message loading">
             <span class="query-spinner" aria-hidden="true"></span>
-            <div><strong>${esc(message)}</strong><p>正在分别核对网页会员和移动端账单。</p></div>
+            <div><strong>${esc(message)}</strong><p>正在核对网页会员和移动端账单。</p></div>
         </div>`
 }
 
@@ -112,11 +112,7 @@ function setBusy(value) {
   const clearButton = document.getElementById('clear-button')
   if (queryButton) queryButton.disabled = value
   if (clearButton) clearButton.disabled = value
-  if (queryButton) {
-    queryButton.innerHTML = value
-      ? '<span>正在映照…</span><b aria-hidden="true">·</b>'
-      : '<span>照见我的订阅</span><b aria-hidden="true">→</b>'
-  }
+  if (queryButton) queryButton.textContent = value ? '正在查询…' : '查询订阅'
 }
 
 function esc(value) {
