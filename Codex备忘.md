@@ -32,7 +32,7 @@ node --test
 
 ## Git
 
-本地提交后推 `origin/main`。Worker 需要另内部署：
+本地并已推送的提交是 `83b3d9e`。Worker 需要另内部署：
 
 ```powershell
 npx wrangler deploy --config backend/wrangler.subscription.jsonc
