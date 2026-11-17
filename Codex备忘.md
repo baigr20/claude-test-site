@@ -1,6 +1,54 @@
 # Codex备忘
 
 - 日期：2026-11-17
+- 任务目标：把 ChatGPT 订阅查询放到 `api.aideal.vip/subscription/`，避开 Cloudflare Worker 拦截。
+
+## 结论
+
+- 查询 API 和镜花水月页面挂在 `https://api.aideal.vip/subscription/`。Nginx 只加了 `/subscription/`，没有动 `/`、`/sub-cpa/`、`/planner/`。
+- 源站是 `root@203.88.118.231`，容器 `subscription-query`（`node:20-bookworm-slim`，`127.0.0.1:8788`）。出站没有 `Cf-Worker` 头。假 token 从公网打到该 API 返回会话拒绝 JSON，不是 403 HTML 拦截页。
+- `https://claude.nx.kg/subscription/` 前端改为调用 `https://api.aideal.vip/subscription`。Gmail 检查仍走原来的 Worker。
+- 未改 Cloudflare `ACTION_TOKEN_SECRET`。VPS 上单独生成了 `/opt/subscription-query/.env`。
+
+## 修改文件
+
+- `backend/subscription-worker.mjs`、`backend/node-server.mjs`、`backend/subscription-worker.test.mjs`
+- `subscription/src/app.js`、`subscription/src/result.js`、`subscription/index.html`、`subscription/result.html`
+- `tests/subscription.test.mjs`、`README.md`
+- 服务器部署脚本：`F:\codex\sub2api-ops\deploy_subscription.py`
+
+## 运行命令
+
+```powershell
+Set-Location 'D:\gitdir\claude-test-site'
+node scripts/stamp-assets.mjs
+node --test backend/subscription-worker.test.mjs tests/subscription.test.mjs
+& 'C:\Users\15177\anaconda3\python.exe' 'F:\codex\sub2api-ops\deploy_subscription.py'
+```
+
+## 测试结果
+
+相关测试 14 passed。公网：`/subscription/` 200，`/subscription/api/health` `ok true proxy true`，CORS 允许 `https://claude.nx.kg`。`/sub-cpa/` 和首页仍 200。假 token 查询 401 文案是会话拒绝，不是 Cloudflare 拦截。
+
+## Git
+
+本地提交后推送 `main`。Pages 会更新 `claude.nx.kg/subscription/` 的前端。
+
+## 遗留问题
+
+- 未用真实 Session 联调。请打开 `https://api.aideal.vip/subscription/` 或更新后的 `https://claude.nx.kg/subscription/` 自行查询。
+- 不要提交 `_checkgpt_plus_dump/`、`*.jpg`、`GROKBOT-UPLOAD.md`。
+- 不要打印 `/opt/subscription-query/.env`。
+
+## 回退方法
+
+```powershell
+& 'D:\Downloads\cmder\vendor\git-for-windows\cmd\git.exe' -C 'D:\gitdir\claude-test-site' revert HEAD
+```
+
+服务器：`docker rm -f subscription-query`；`cp /etc/nginx/sites-available/sub2api.bak-subscription-20261117 /etc/nginx/sites-available/sub2api && nginx -t && systemctl reload nginx`。
+
+- 日期：2026-11-17
 - 任务目标：确认 cookie-first Worker 上线后仍查不通，并修正拦截提示。
 
 ## 结论

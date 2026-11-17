@@ -182,6 +182,7 @@ test('subscription pages follow the checkgpt query and action contract', () => {
   assert.match(app, /parseSessionInput/)
   assert.match(app, /\/api\/health/)
   assert.match(app, /\/api\/subscription\/query/)
+  assert.match(app, /api\.aideal\.vip\/subscription/)
   assert.doesNotMatch(app, /querySubscriptionLocally/)
   assert.match(app, /actionToken\.length < 24/)
   assert.match(query, /purchase_origin_platform/)

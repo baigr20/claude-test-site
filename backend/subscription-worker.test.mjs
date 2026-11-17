@@ -20,6 +20,7 @@ const demoToken = jwtWith({
 
 test('allows the toolbox origin and local preview', () => {
   assert.equal(allowedOrigin('https://claude.nx.kg'), 'https://claude.nx.kg')
+  assert.equal(allowedOrigin('https://api.aideal.vip'), 'https://api.aideal.vip')
   assert.equal(allowedOrigin('http://127.0.0.1:8765'), 'http://127.0.0.1:8765')
   assert.equal(allowedOrigin('https://evil.example'), '')
 })

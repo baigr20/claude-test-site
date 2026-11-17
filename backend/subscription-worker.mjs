@@ -3,6 +3,7 @@ import { handleGmailCheck } from './gmail-check.mjs'
 import { parseSessionInput, buildResult, readJwtClaims } from '../subscription/src/query.js'
 
 const SITE_ORIGIN = 'https://claude.nx.kg'
+const AIDEAL_ORIGIN = 'https://api.aideal.vip'
 const CHATGPT = 'https://chatgpt.com'
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 const MAX_BODY_BYTES = 512_000
@@ -32,7 +33,7 @@ const PATHS = {
 
 export function allowedOrigin(origin) {
   if (!origin) return SITE_ORIGIN
-  if (origin === SITE_ORIGIN) return origin
+  if (origin === SITE_ORIGIN || origin === AIDEAL_ORIGIN) return origin
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return origin
   return ''
 }

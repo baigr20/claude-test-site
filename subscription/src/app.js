@@ -1,7 +1,7 @@
 import { parseSessionInput } from './query.js?v=ac3a17e370'
 
 const RESULT_TRANSFER_KEY = 'checkgpt.result.v2'
-const WORKER_ORIGIN = 'https://claude-nx-subscription.bai1517735291.workers.dev'
+const WORKER_ORIGIN = 'https://api.aideal.vip/subscription'
 let busy = false
 
 document.addEventListener('DOMContentLoaded', initializeLandingPage)
