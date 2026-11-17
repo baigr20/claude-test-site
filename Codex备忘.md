@@ -28,6 +28,10 @@ node --test
 
 全量 `node --test`：58 passed, 0 failed。本地 Playwright 对照 checkgpt.plus 首页/结果空态，桌面和手机布局一致。本机静态预览的徽章可能仍是确认中，因为 localhost 不在 Worker CORS 里；上线 `claude.nx.kg` 后会变成绿色在线。
 
+## Git
+
+本地并已推送的提交是 `8739cd3`。GitHub Pages 会跟着 `main` 更新。Worker 未改，不用重新部署。
+
 ## 遗留问题
 
 - 不要提交 `_checkgpt_plus_dump/`、未跟踪的 `*.jpg` 和 `GROKBOT-UPLOAD.md`。
