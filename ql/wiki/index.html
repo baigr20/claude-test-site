@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>量子光学 · 知识库</title>
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="description" content="张智明《量子光学》转录文稿的阅读页。不在站点首页列出。" />
+  <link rel="stylesheet" href="vendor/katex/katex.min.css" />
+  <link rel="stylesheet" href="css/wiki.css" />
+</head>
+<body>
+  <a class="skip" href="#article">跳到正文</a>
+  <header class="topbar">
+    <button class="menu-btn" id="menuBtn" type="button" aria-label="打开目录">☰</button>
+    <a class="brand" href="#/">
+      <strong>量子光学</strong>
+      <small>知识库 · 仅通过链接访问</small>
+    </a>
+    <label class="search">
+      <span class="visually-hidden" style="position:absolute;left:-999px">搜索</span>
+      <input id="q" type="search" placeholder="搜索标题或正文" autocomplete="off" />
+      <div class="search-panel" id="searchPanel"></div>
+    </label>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="切换配色">◐</button>
+  </header>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="nav-group">
+        <h2 id="bookMeta">目录</h2>
+        <p style="margin:0 0 10px"><a href="#/">封面</a></p>
+        <ul class="nav-list" id="navList"></ul>
+      </div>
+    </aside>
+    <main class="main">
+      <p class="kicker" id="kicker">知识库</p>
+      <article class="article" id="article" tabindex="-1">
+        <p class="loading">正在载入……</p>
+      </article>
+    </main>
+    <aside class="toc-rail" id="tocRail">
+      <div class="nav-group">
+        <h2>本页目录</h2>
+        <ul class="toc-list" id="tocList"></ul>
+      </div>
+    </aside>
+  </div>
+  <script src="vendor/katex/katex.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
