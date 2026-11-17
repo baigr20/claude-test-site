@@ -93,8 +93,13 @@ function chatgptHeaders(session, options = {}) {
   return headers
 }
 
-function isChallenge(status, text) {
-  return status === 403 && /cf-mitigated|just a moment|challenge-platform/i.test(String(text || ''))
+function isChallenge(status, text, contentType) {
+  if (status !== 403) return false
+  const body = String(text || '')
+  const type = String(contentType || '')
+  if (/cf-mitigated|just a moment|challenge-platform|attention required|cf-error-details/i.test(body)) return true
+  if (/text\/html/i.test(type) && /<html/i.test(body)) return true
+  return false
 }
 
 function failedPayload(result) {
@@ -139,7 +144,7 @@ async function chatgptSend(method, path, session, body, options = {}) {
         data = { _error: 'non-json' }
       }
     }
-    const challenge = isChallenge(response.status, text)
+    const challenge = isChallenge(response.status, text, response.headers.get('content-type'))
     if (!response.ok) return { ok: false, status: response.status, data, challenge }
     return { ok: true, status: response.status, data, challenge: false }
   } catch (error) {
@@ -249,7 +254,9 @@ function sessionExpired(session) {
 }
 
 function queryFailureMessage(statuses, session) {
-  if (statuses.some((status) => status === 'challenge')) return 'ChatGPT 拦截了查询节点，会话没有过期'
+  if (statuses.some((status) => status === 'challenge')) {
+    return 'ChatGPT 拦截了 Cloudflare 查询节点，会话没有过期；需要把查询放到普通服务器上'
+  }
   if (statuses.some((status) => status === 'auth')) {
     if (sessionExpired(session)) return 'Session 无效或已过期，请重新获取'
     if (!session.sessionToken) {

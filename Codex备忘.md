@@ -1,6 +1,46 @@
 # Codex备忘
 
 - 日期：2026-11-17
+- 任务目标：确认 cookie-first Worker 上线后仍查不通，并修正拦截提示。
+
+## 结论
+
+- 新查询逻辑已在线上（假 token 会返回带 sessionToken / 完整会话 的新文案）。`/ql/wiki/`、首页、Gmail 仍是 200。
+- 根因：Cloudflare Worker 出站 `fetch` 会带 `Cf-Worker`。本机对照：不带该头访问 `chatgpt.com/backend-api/me` 是 401 JSON；带上该头是 403 HTML 拦截页。checkgpt.plus 不在 Cloudflare 上，所以能查。
+- Worker 去不掉 `Cf-Worker`。继续改请求顺序也查不通。需要一台普通服务器做查询节点。
+- 顺手把无 `cf-mitigated` 的 403 HTML 识别成拦截，避免再写成 token 被拒。
+
+## 修改文件
+
+- `backend/subscription-worker.mjs`
+- `backend/subscription-worker.test.mjs`
+
+## 运行命令
+
+```powershell
+Set-Location 'D:\gitdir\claude-test-site'
+node --test backend/subscription-worker.test.mjs tests/subscription.test.mjs
+```
+
+## 测试结果
+
+相关测试 14 passed。
+
+## Git
+
+本地提交后推送 `main`。Worker 若只为改提示，可再部署一次；查询要通仍需非 Cloudflare 节点。
+
+## 遗留问题
+
+- 查询功能要一台能跑 Node 的 VPS / Fly / Railway。不要重建 `ACTION_TOKEN_SECRET`。
+
+## 回退方法
+
+```powershell
+& 'D:\Downloads\cmder\vendor\git-for-windows\cmd\git.exe' -C 'D:\gitdir\claude-test-site' revert HEAD
+```
+
+- 日期：2026-11-17
 - 任务目标：修订阅查询「ChatGPT 拒绝了这份仍在有效期内的 accessToken」。
 
 ## 结论

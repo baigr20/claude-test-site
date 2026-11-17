@@ -104,6 +104,17 @@ test('sends the session cookie first, refreshes via /api/auth/session, and keeps
     const expired = await handleQuery({ session: { accessToken: expiredToken } })
     assert.equal(expired.ok, false)
     assert.match(expired.message, /已过期/)
+
+    globalThis.fetch = async () => new Response('<html><body class="logo">blocked</body></html>', {
+      status: 403,
+      headers: { 'content-type': 'text/html; charset=UTF-8' }
+    })
+    const blocked = await handleQuery({
+      session: { accessToken: demoToken, sessionToken: 'session-secret-value' }
+    })
+    assert.equal(blocked.ok, false)
+    assert.match(blocked.message, /拦截了 Cloudflare 查询节点/)
+    assert.equal(blocked.message.includes('已过期'), false)
   } finally {
     globalThis.fetch = originalFetch
   }
