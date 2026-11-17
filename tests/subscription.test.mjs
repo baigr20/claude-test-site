@@ -191,6 +191,7 @@ test('subscription pages follow the checkgpt query and action contract', () => {
   assert.match(worker, /\/backend-api\/subscriptions\/resume/)
   assert.doesNotMatch(worker, /__Host-next-auth/)
   assert.match(worker, /oai-device-id/)
+  assert.match(worker, /\/api\/auth\/session/)
   assert.match(resultJs, /\/api\/subscription\/cancel/)
   assert.match(resultJs, /\/api\/subscription\/renew/)
   assert.match(resultJs, /\/api\/subscription\/link/)

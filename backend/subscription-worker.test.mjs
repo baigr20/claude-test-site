@@ -44,13 +44,22 @@ test('health and query routes respond without logging tokens', async () => {
   assert.match(missingBody.message, /accessToken/)
 })
 
-test('uses the access token before the session cookie and keeps a live token distinct from expiry', async () => {
+test('sends the session cookie first, refreshes via /api/auth/session, and keeps a live token distinct from expiry', async () => {
   const originalFetch = globalThis.fetch
   const calls = []
+  const sessionCookie = '__Secure-next-auth.session-token=session-secret-value'
   globalThis.fetch = async (url, init) => {
     const headers = init?.headers || {}
-    calls.push({ url: String(url), cookie: headers.Cookie || '', device: headers['oai-device-id'] || '' })
+    calls.push({
+      url: String(url),
+      cookie: headers.Cookie || '',
+      device: headers['oai-device-id'] || '',
+      auth: headers.Authorization || ''
+    })
     if (!headers.Cookie) return Response.json({ detail: 'Unauthorized' }, { status: 401 })
+    if (String(url).includes('/api/auth/session')) {
+      return Response.json({ accessToken: demoToken, user: { email: 'demo@example.com' } })
+    }
     if (String(url).includes('/backend-api/me')) return Response.json({ email: 'demo@example.com', name: 'Demo' })
     return Response.json({})
   }
@@ -64,18 +73,32 @@ test('uses the access token before the session cookie and keeps a live token dis
     })
     assert.equal(live.ok, true)
     assert.equal(live.accountDiagnostics.sources.me, 'ok')
-    assert.equal(calls.some((call) => call.cookie === '' && call.device === 'device-1'), true)
-    assert.equal(calls.some((call) => call.cookie === '__Secure-next-auth.session-token=session-secret-value'), true)
+    assert.equal(calls[0]?.url.includes('/api/auth/session'), true)
+    assert.equal(calls[0]?.cookie, sessionCookie)
+    assert.equal(calls[0]?.auth, '')
+    const backend = calls.filter((call) => call.url.includes('/backend-api/'))
+    assert.equal(backend[0]?.url.includes('/backend-api/me'), true)
+    assert.equal(backend[0]?.cookie, sessionCookie)
+    assert.equal(backend[0]?.device, 'device-1')
+    assert.match(backend[0]?.auth, /^Bearer /)
+    assert.equal(backend.every((call) => call.cookie === sessionCookie), true)
     assert.equal(calls.some((call) => call.cookie.includes('__Host-next-auth')), false)
     assert.equal(JSON.stringify(live).includes(demoToken), false)
     assert.equal(JSON.stringify(live).includes('session-secret-value'), false)
 
     calls.length = 0
-    globalThis.fetch = async () => Response.json({ detail: 'Unauthorized' }, { status: 401 })
+    globalThis.fetch = async (url) => {
+      calls.push(String(url))
+      return Response.json({ detail: 'Unauthorized' }, { status: 401 })
+    }
     const refused = await handleQuery({ session: { accessToken: demoToken } })
     assert.equal(refused.ok, false)
     assert.equal(refused.message.includes('已过期'), false)
     assert.match(refused.message, /仍在有效期内/)
+    assert.match(refused.message, /sessionToken/)
+    const backendAfterAuthFail = calls.filter((url) => url.includes('/backend-api/'))
+    assert.equal(backendAfterAuthFail.length > 0, true)
+    assert.equal(backendAfterAuthFail.every((url) => url.includes('/backend-api/me')), true)
 
     const expiredToken = jwtWith({ exp: 1000000000 })
     const expired = await handleQuery({ session: { accessToken: expiredToken } })

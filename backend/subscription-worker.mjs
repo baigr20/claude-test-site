@@ -1,6 +1,6 @@
 import { defaultActionStore } from './action-token.mjs'
 import { handleGmailCheck } from './gmail-check.mjs'
-import { parseSessionInput, buildResult } from '../subscription/src/query.js'
+import { parseSessionInput, buildResult, readJwtClaims } from '../subscription/src/query.js'
 
 const SITE_ORIGIN = 'https://claude.nx.kg'
 const CHATGPT = 'https://chatgpt.com'
@@ -72,15 +72,18 @@ function safeHttpsUrl(value) {
   }
 }
 
-function chatgptHeaders(session, includeCookie, jsonBody) {
+function chatgptHeaders(session, options = {}) {
+  const includeCookie = options.includeCookie === true
+  const includeAuth = options.includeAuth !== false
+  const jsonBody = options.jsonBody === true
   const headers = {
-    Authorization: `Bearer ${session.accessToken}`,
     Accept: 'application/json',
     'User-Agent': USER_AGENT,
     Origin: CHATGPT,
     Referer: `${CHATGPT}/`,
     'oai-language': 'zh-CN'
   }
+  if (includeAuth && session.accessToken) headers.Authorization = `Bearer ${session.accessToken}`
   if (session.accountId) headers['ChatGPT-Account-Id'] = session.accountId
   if (session.deviceId) headers['oai-device-id'] = session.deviceId
   if (includeCookie && session.sessionToken) {
@@ -94,8 +97,31 @@ function isChallenge(status, text) {
   return status === 403 && /cf-mitigated|just a moment|challenge-platform/i.test(String(text || ''))
 }
 
-async function chatgptSend(method, path, session, body, includeCookie) {
-  const headers = chatgptHeaders(session, includeCookie, body !== undefined)
+function failedPayload(result) {
+  const label = result.challenge ? `HTTP ${result.status} challenge` : `HTTP ${result.status || 0}`
+  return { _error: label, status: result.status }
+}
+
+function applyAccessToken(session, accessToken) {
+  const next = String(accessToken || '').trim()
+  if (!next) return session
+  session.accessToken = next
+  const claims = readJwtClaims(next)
+  session.claims = claims
+  const auth = claims['https://api.openai.com/auth']
+  const accountId = auth && typeof auth === 'object'
+    ? String(auth.chatgpt_account_id || auth.account_id || '').trim()
+    : ''
+  if (accountId) session.accountId = accountId
+  return session
+}
+
+async function chatgptSend(method, path, session, body, options = {}) {
+  const headers = chatgptHeaders(session, {
+    includeCookie: options.includeCookie === true,
+    includeAuth: options.includeAuth !== false,
+    jsonBody: body !== undefined
+  })
   try {
     const response = await fetch(`${CHATGPT}${path}`, {
       method,
@@ -122,27 +148,56 @@ async function chatgptSend(method, path, session, body, includeCookie) {
 }
 
 async function chatgptSendPreferred(method, path, session, body) {
-  const first = await chatgptSend(method, path, session, body, false)
-  if (first.ok || !session.sessionToken || (first.status !== 401 && first.status !== 403)) return first
-  const second = await chatgptSend(method, path, session, body, true)
-  if (second.ok) return second
-  if (second.challenge && !first.challenge) return second
-  return first
+  if (session.sessionToken) {
+    const withCookie = await chatgptSend(method, path, session, body, { includeCookie: true })
+    if (withCookie.ok || withCookie.challenge) return withCookie
+    if (withCookie.status !== 401 && withCookie.status !== 403) return withCookie
+    const tokenOnly = await chatgptSend(method, path, session, body, { includeCookie: false })
+    if (tokenOnly.ok || tokenOnly.challenge) return tokenOnly
+    return withCookie
+  }
+  return chatgptSend(method, path, session, body, { includeCookie: false })
 }
 
-async function chatgptGet(path, session) {
-  const result = await chatgptSendPreferred('GET', path, session)
-  if (!result.ok) {
-    const label = result.challenge ? `HTTP ${result.status} challenge` : `HTTP ${result.status || 0}`
-    return { _error: label, status: result.status }
-  }
+async function chatgptGet(path, session, includeCookie) {
+  const result = await chatgptSend('GET', path, session, undefined, { includeCookie })
+  if (!result.ok) return failedPayload(result)
   return result.data
 }
 
+async function refreshFromCookie(session) {
+  if (!session?.sessionToken) return session
+  const result = await chatgptSend('GET', '/api/auth/session', session, undefined, {
+    includeCookie: true,
+    includeAuth: false
+  })
+  if (!result.ok) return session
+  applyAccessToken(session, result.data?.accessToken)
+  return session
+}
+
 export async function fetchChatGPT(session) {
-  const fetched = {}
+  await refreshFromCookie(session)
+  const includeCookie = Boolean(session.sessionToken)
+  let probe = await chatgptSend('GET', PATHS.me, session, undefined, { includeCookie })
+  let mode = includeCookie
+  if (!probe.ok && includeCookie && !probe.challenge && (probe.status === 401 || probe.status === 403)) {
+    const tokenOnly = await chatgptSend('GET', PATHS.me, session, undefined, { includeCookie: false })
+    if (tokenOnly.ok || tokenOnly.challenge) {
+      probe = tokenOnly
+      mode = false
+    }
+  }
+  if (!probe.ok) {
+    const error = failedPayload(probe)
+    const fetched = {}
+    for (const key of Object.keys(PATHS)) fetched[key] = error
+    return fetched
+  }
+  const fetched = { me: probe.data }
   await Promise.all(Object.entries(PATHS).map(async ([key, path]) => {
-    fetched[key] = await chatgptGet(path, session)
+    if (key === 'me') return
+    fetched[key] = await chatgptGet(path, session, mode)
   }))
   return fetched
 }
@@ -196,9 +251,11 @@ function sessionExpired(session) {
 function queryFailureMessage(statuses, session) {
   if (statuses.some((status) => status === 'challenge')) return 'ChatGPT 拦截了查询节点，会话没有过期'
   if (statuses.some((status) => status === 'auth')) {
-    return sessionExpired(session)
-      ? 'Session 无效或已过期，请重新获取'
-      : 'ChatGPT 拒绝了这份仍在有效期内的 accessToken'
+    if (sessionExpired(session)) return 'Session 无效或已过期，请重新获取'
+    if (!session.sessionToken) {
+      return 'ChatGPT 拒绝了这份仍在有效期内的 accessToken；请粘贴带 sessionToken 的完整会话后再试'
+    }
+    return 'ChatGPT 拒绝了这份仍在有效期内的会话，请重新打开会话数据页面后再试'
   }
   return '查询失败，请检查 Session 是否有效'
 }

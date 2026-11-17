@@ -1,6 +1,55 @@
 # Codex备忘
 
 - 日期：2026-11-17
+- 任务目标：修订阅查询「ChatGPT 拒绝了这份仍在有效期内的 accessToken」。
+
+## 结论
+
+- 页面已经是 checkgpt.plus 复刻。checkgpt.plus 的 `/api/health` 不在 Cloudflare 上；本站查询走 Cloudflare Worker，ChatGPT 会看到 Worker 出口 IP。
+- 旧 Worker 先对 10 个接口只带 accessToken 并行请求，401 后再补 `__Secure-next-auth.session-token`。这次改成：有 sessionToken 时先 Cookie 刷新 `/api/auth/session`，再带 Cookie 探测 `/backend-api/me`，成功后才拉其余接口；不要发送 `__Host-next-auth.session-token`。
+- 仍有效的 token 被拒时，不再一律写成“已过期”。没有 sessionToken 时提示补完整会话。
+- 静态页不用重新发。线上要 grokbot 重新部署 Worker 后才会生效。不要重建 `ACTION_TOKEN_SECRET`。不要用真实 Session 做联调。
+
+## 修改文件
+
+- `backend/subscription-worker.mjs`
+- `backend/subscription-worker.test.mjs`
+- `tests/subscription.test.mjs`
+- `README.md`
+
+## 运行命令
+
+```powershell
+Set-Location 'D:\gitdir\claude-test-site'
+node --test backend/subscription-worker.test.mjs tests/subscription.test.mjs
+```
+
+## 测试结果
+
+相关测试 14 passed。全量 `node --test` 有 1 个既有失败：`tests/assets.test.mjs` 因本机 CRLF 和已提交的资源哈希不一致，未跑 `stamp-assets.mjs`，避免改脏前端。
+
+## Git
+
+本地提交后推送 `main`。Worker 需要另内部署：
+
+```powershell
+npx wrangler deploy --config backend/wrangler.subscription.jsonc
+```
+
+不要重建 `ACTION_TOKEN_SECRET`。
+
+## 遗留问题
+
+- 若部署后 ChatGPT 仍 401，多半是 Cloudflare Worker 出口被拦，checkgpt.plus 用的是普通服务器 IP。那时需要非 Cloudflare 的查询节点。
+- 不要提交 `_checkgpt_plus_dump/`、未跟踪的 `*.jpg` 和 `GROKBOT-UPLOAD.md`。
+
+## 回退方法
+
+```powershell
+& 'D:\Downloads\cmder\vendor\git-for-windows\cmd\git.exe' -C 'D:\gitdir\claude-test-site' revert HEAD
+```
+
+- 日期：2026-11-17
 - 任务目标：把 `/subscription/` 按 https://checkgpt.plus/ 一比一复刻，去掉工具箱顶栏和改写过的文案。
 
 ## 结论
