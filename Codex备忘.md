@@ -1,6 +1,45 @@
 # Codex备忘
 
 - 日期：2026-11-17
+- 任务目标：把 `/subscription/` 按 https://checkgpt.plus/ 一比一复刻，去掉工具箱顶栏和改写过的文案。
+
+## 结论
+
+- 查询页和结果页改用 checkgpt.plus 的 HTML/CSS（镜花水月），不再套 NX 工具箱 `site-header`、`site.css` 和主题开关。
+- 查询、健康检查、取消/恢复续费、账单链接仍走 Worker `https://claude-nx-subscription.bai1517735291.workers.dev`。
+- 状态徽章文案固定为「在线会员查询」，只改绿/红点和 aria-label，和源站一致。
+- Worker 未改，不需要重新部署。
+
+## 修改文件
+
+- `subscription/index.html`、`subscription/result.html`
+- `subscription/src/styles.css`、`subscription/src/app.js`、`subscription/src/result.js`
+- `tests/subscription.test.mjs`、`README.md`
+
+## 运行命令
+
+```powershell
+Set-Location 'D:\gitdir\claude-test-site'
+node scripts/stamp-assets.mjs
+node --test
+```
+
+## 测试结果
+
+全量 `node --test`：58 passed, 0 failed。本地 Playwright 对照 checkgpt.plus 首页/结果空态，桌面和手机布局一致。本机静态预览的徽章可能仍是确认中，因为 localhost 不在 Worker CORS 里；上线 `claude.nx.kg` 后会变成绿色在线。
+
+## 遗留问题
+
+- 不要提交 `_checkgpt_plus_dump/`、未跟踪的 `*.jpg` 和 `GROKBOT-UPLOAD.md`。
+- 从订阅页回工具箱请打开 `https://claude.nx.kg/`。
+
+## 回退方法
+
+```powershell
+& 'D:\Downloads\cmder\vendor\git-for-windows\cmd\git.exe' -C 'D:\gitdir\claude-test-site' revert HEAD
+```
+
+- 日期：2026-11-17
 - 任务目标：按 acctcheck.com 复刻谷歌账号检查，放到 claude.nx.kg 工具箱。
 
 ## 结论

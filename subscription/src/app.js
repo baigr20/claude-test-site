@@ -1,6 +1,7 @@
 import { parseSessionInput } from './query.js?v=ac3a17e370'
 
 const RESULT_TRANSFER_KEY = 'checkgpt.result.v2'
+const WORKER_ORIGIN = 'https://claude-nx-subscription.bai1517735291.workers.dev'
 let busy = false
 
 document.addEventListener('DOMContentLoaded', initializeLandingPage)
@@ -19,20 +20,16 @@ async function checkServiceStatus() {
   status.classList.add('checking')
   status.setAttribute('aria-label', '正在确认查询服务状态')
   try {
-    const response = await fetch('https://claude-nx-subscription.bai1517735291.workers.dev/api/health', { cache: 'no-store', signal: AbortSignal.timeout(4000) })
+    const response = await fetch(`${WORKER_ORIGIN}/api/health`, { cache: 'no-store', signal: AbortSignal.timeout(4000) })
     const result = await response.json().catch(() => ({}))
     if (!response.ok || !result.ok) throw new Error('service unavailable')
     status.classList.remove('checking', 'offline')
     status.classList.add('online')
     status.setAttribute('aria-label', '在线会员查询服务运行正常')
-    const label = status.querySelector('b')
-    if (label) label.textContent = '查询服务在线'
   } catch {
     status.classList.remove('checking', 'online')
     status.classList.add('offline')
     status.setAttribute('aria-label', '在线会员查询服务暂时无法连接')
-    const label = status.querySelector('b')
-    if (label) label.textContent = '查询服务离线'
   }
 }
 
@@ -51,7 +48,7 @@ async function querySubscription() {
   setBusy(true)
   showInputLoading('正在读取订阅与账单信息')
   try {
-    const response = await fetch('https://claude-nx-subscription.bai1517735291.workers.dev/api/subscription/query', {
+    const response = await fetch(`${WORKER_ORIGIN}/api/subscription/query`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session }),
