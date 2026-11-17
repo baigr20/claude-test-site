@@ -19,7 +19,10 @@ export const leafAssets = [
   'subscription/src/query.js',
   'subscription/src/result.js',
   'grok/src/styles.css',
-  'grok/src/parse.js'
+  'grok/src/parse.js',
+  'gmail/src/styles.css',
+  'gmail/src/parse.js',
+  'gmail/src/query.js'
 ]
 
 export const stampedModules = {
@@ -27,7 +30,8 @@ export const stampedModules = {
   'sub-cpa/src/app.js': ['./converter.js', './codex-oauth.js'],
   '2fa/src/app.js': ['./totp.js'],
   'subscription/src/app.js': ['./query.js'],
-  'grok/src/app.js': ['./parse.js']
+  'grok/src/app.js': ['./parse.js'],
+  'gmail/src/app.js': ['./parse.js', './query.js']
 }
 
 export const htmlFiles = [
@@ -37,7 +41,8 @@ export const htmlFiles = [
   '2fa/index.html',
   'subscription/index.html',
   'subscription/result.html',
-  'grok/index.html'
+  'grok/index.html',
+  'gmail/index.html'
 ]
 
 export function sha10(buf) {

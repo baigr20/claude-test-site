@@ -6,9 +6,9 @@
   <title>NX 工具箱</title>
   <meta name="description" content="在浏览器本地完成格式转换等小工具。默认不上传凭证，也不保存到服务器。" />
   <meta name="theme-color" content="#3aa888" />
-  <link rel="icon" href="/assets/favicon.svg?v=bfb4d29d18" type="image/svg+xml" />
-  <link rel="stylesheet" href="/assets/site.css?v=0a8a901ff0" />
-  <script src="/assets/theme.js?v=78db184fe2"></script>
+  <link rel="icon" href="/assets/favicon.svg?v=9ff6e7de59" type="image/svg+xml" />
+  <link rel="stylesheet" href="/assets/site.css?v=6f15b54602" />
+  <script src="/assets/theme.js?v=097d068ec0"></script>
 </head>
 <body>
   <a class="skip" href="#main">跳到内容</a>
@@ -30,7 +30,7 @@
       <p>这是一个小型工具箱。第一批只放已经真正可用的工具，转换在你的浏览器里完成，页面不会把凭证上传到本站服务器。</p>
       <div class="pill-row">
         <span class="pill">本地处理，不上传凭证</span>
-        <span class="pill">现有 5 个工具</span>
+        <span class="pill">现有 6 个工具</span>
       </div>
     </section>
 
@@ -76,6 +76,11 @@
         <h2>Grok 订阅查询</h2>
         <p>粘贴 grok.com 订阅 JSON，查看套餐、到期时间和剩余天数。同一份 JSON 里的 X 订阅只在有到期时间时才计入天数。</p>
       </a>
+      <a class="card" href="/gmail/" data-tool-card data-category="query" data-search="gmail google 谷歌账号检查 邮箱检查 acctcheck gmailcheck 账号异常 谷歌邮箱 未注册">
+        <div class="card-meta"><span>查询</span><span>在线查询</span></div>
+        <h2>谷歌账号检查</h2>
+        <p>按行粘贴 Gmail 或用户名，查询是否注册、是否异常。只填账号，不要填密码。列表经本站接口查询，不落盘。</p>
+      </a>
       <a class="card" href="https://lm.ikale.io/" target="_blank" rel="noopener noreferrer" data-tool-card data-category="query" data-search="模型检测 模型指纹检测 fingerpoint detector lm.ikale.io llm 大语言模型 api 识别 指纹">
         <div class="card-meta"><span>查询</span><span>外部工具</span></div>
         <h2>模型指纹检测</h2>
@@ -88,9 +93,9 @@
   <footer class="site-footer">
     <div class="wrap">
       <p>NX 工具箱是独立的实用页面，不是 Anthropic、OpenAI 或其他模型厂商的官方站点。</p>
-      <p>工具默认在浏览器本地运行。请不要把真实生产凭证发到不信任的环境；本页不提供协议登录或测活。ChatGPT 订阅查询会经本站接口向 ChatGPT 核对，会话不落盘。Grok 订阅查询只解析你粘贴的 JSON。</p>
+      <p>工具默认在浏览器本地运行。请不要把真实生产凭证发到不信任的环境；本页不提供协议登录或测活。ChatGPT 订阅查询会经本站接口向 ChatGPT 核对，会话不落盘。Grok 订阅查询只解析你粘贴的 JSON。谷歌账号检查只接受账号列表，经本站接口查询，不落盘。</p>
     </div>
   </footer>
-  <script type="module" src="/assets/home.js?v=201f058cda"></script>
+  <script type="module" src="/assets/home.js?v=7735d35ace"></script>
 </body>
 </html>

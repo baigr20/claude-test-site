@@ -1,5 +1,56 @@
 # Codex备忘
 
+- 日期：2026-11-17
+- 任务目标：按 acctcheck.com 复刻谷歌账号检查，放到 claude.nx.kg 工具箱。
+
+## 结论
+
+- 新页面 `/gmail/`，交互对齐 https://www.acctcheck.com/zh-cn/：按行输入、批量查询、正常/异常/未注册/错误、复制和 CSV。
+- 浏览器不能直连 acctcheck（无 CORS），所以走现有 Worker：`POST https://claude-nx-subscription.bai1517735291.workers.dev/api/gmail/check`。
+- Worker 把账号列表转给 `https://www.acctcheck.com/api/check`，不落盘、不记日志。拒绝 `----`、`|`、`:` 这类带密码分隔符的行。单次最多 200 个。
+- 静态页推到 GitHub Pages 后即可打开；查询要重新部署 Worker 后才通。
+
+## 修改文件
+
+- `gmail/index.html`、`gmail/src/app.js`、`gmail/src/parse.js`、`gmail/src/query.js`、`gmail/src/styles.css`
+- `backend/gmail-check.mjs`、`backend/subscription-worker.mjs`
+- `index.html`、`README.md`、`scripts/stamp-assets.mjs`
+- `tests/gmail.test.mjs`、`tests/visual.test.mjs`
+- 本机 CRLF 导致资源哈希重盖：`2fa/`、`sub-cpa/`、`subscription/`、`grok/`、`404.html`、`assets/home.js`
+
+## 运行命令
+
+```powershell
+Set-Location 'D:\gitdir\claude-test-site'
+node scripts/stamp-assets.mjs
+node --test
+```
+
+## 测试结果
+
+全量 `node --test`：57 passed, 0 failed。本地用真实上游抽查 `alice.wonderland@gmail.com` 为正常、`thisaddressshouldnotexistxyz99999@gmail.com` 为未注册。
+
+## Git
+
+本地提交后推 `origin/main`。Worker 需要另内部署：
+
+```powershell
+npx wrangler deploy --config backend/wrangler.subscription.jsonc
+```
+
+不要重建 `ACTION_TOKEN_SECRET`。
+
+## 遗留问题
+
+- 未部署 Worker 前，`/gmail/` 页面能打开，点检查会失败。
+- 不要提交仓库里未跟踪的 `*.jpg` 和 `GROKBOT-UPLOAD.md`。
+
+## 回退方法
+
+```powershell
+& 'D:\Downloads\cmder\vendor\git-for-windows\cmd\git.exe' -C 'D:\gitdir\claude-test-site' revert HEAD
+```
+
 - 日期：2026-11-16
 - 任务目标：修正 ChatGPT 订阅查询把仍有效的 accessToken 报成“Session 无效或已过期”。
 

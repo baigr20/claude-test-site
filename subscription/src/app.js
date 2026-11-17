@@ -1,4 +1,4 @@
-import { parseSessionInput } from './query.js?v=ffe7d29607'
+import { parseSessionInput } from './query.js?v=ac3a17e370'
 
 const RESULT_TRANSFER_KEY = 'checkgpt.result.v2'
 let busy = false

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>谷歌账号检查</title>
+    <meta name="description" content="按行粘贴 Gmail 或用户名，查询账号是否注册、是否异常。不要填写密码。" />
+    <meta name="theme-color" content="#3aa888" />
+    <link rel="icon" href="/assets/favicon.svg?v=9ff6e7de59" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/site.css?v=6f15b54602" />
+    <link rel="stylesheet" href="./src/styles.css?v=081a52f0c7" />
+    <meta name="referrer" content="no-referrer" />
+    <script src="/assets/theme.js?v=097d068ec0"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">跳到内容</a>
+    <header class="site-header">
+      <div class="wrap header-row">
+        <a class="brand" href="/">
+          <span class="mark" aria-hidden="true">NX</span>
+          <span class="brand-text"><strong>NX 工具箱</strong><small>claude.nx.kg</small></span>
+        </a>
+        <div class="header-actions">
+          <button class="icon-btn" id="themeToggle" type="button" onclick="toggleToolboxTheme()">◐</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="wrap tool-page">
+      <header class="tool-intro">
+        <span>在线查询 · 不保存列表</span>
+        <h1>谷歌账号检查</h1>
+        <p>按行粘贴 Gmail、Google 企业邮箱或纯用户名。本页把账号列表发到查询节点核对是否注册、是否异常，不会请你输入密码，也不会把列表写入浏览器存储。</p>
+      </header>
+
+      <div class="callout callout--warn">
+        <strong>只填账号，不要填密码。</strong>
+        含 <code>----</code>、<code>|</code> 或 <code>:</code> 的行会直接拒绝。本页不是 Google 官方工具，结果仅供参考。
+      </div>
+
+      <div class="tool-grid">
+        <section class="panel">
+          <div>
+            <span class="kicker">输入</span>
+            <h2>账号列表</h2>
+          </div>
+          <form id="checkForm">
+            <div class="actions editor-meta">
+              <span class="kicker" id="emailCount">0 个</span>
+            </div>
+            <div class="editor">
+              <pre id="lineNumbers" class="line-numbers" aria-hidden="true">1</pre>
+              <textarea
+                id="emailInput"
+                class="secret-input"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="每行一个，支持用户名或完整邮箱&#10;&#10;example1@gmail.com&#10;example2&#10;name@company.com"
+              ></textarea>
+            </div>
+            <div class="progress" aria-live="polite">
+              <div class="progress-meta">
+                <span><span class="spinner" id="spinner" hidden></span>已检查 <b id="statDone">0</b> / <b id="statTotal">0</b></span>
+                <span id="progressPercent">0%</span>
+              </div>
+              <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+            </div>
+            <div class="actions">
+              <button id="checkButton" class="button button--solid" type="submit">开始检查</button>
+              <button id="pauseButton" class="button" type="button" hidden>停止检查</button>
+              <button id="clearInput" class="button button--quiet" type="button">清空输入</button>
+              <button id="clearAll" class="button button--quiet" type="button">全部清空</button>
+            </div>
+            <p id="statusText" class="status-text">等待输入</p>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div>
+            <span class="kicker">结果</span>
+            <h2>检查结果</h2>
+          </div>
+          <div id="resultList" class="result-list" tabindex="0"></div>
+          <div class="stat-grid">
+            <div class="stat is-normal"><b id="countNormal">0</b><span>正常</span></div>
+            <div class="stat is-abnormal"><b id="countAbnormal">0</b><span>异常</span></div>
+            <div class="stat is-not_exist"><b id="countNotExist">0</b><span>未注册</span></div>
+            <div class="stat"><b id="countError">0</b><span>错误</span></div>
+          </div>
+          <div class="actions">
+            <label class="kicker" for="filterStatus">筛选</label>
+            <select id="filterStatus" class="filter">
+              <option value="all">全部</option>
+              <option value="normal">正常</option>
+              <option value="abnormal">异常</option>
+              <option value="not_exist">未注册</option>
+              <option value="error">错误</option>
+            </select>
+            <button id="copyResults" class="button button--solid" type="button">复制结果</button>
+            <button id="exportResults" class="button" type="button">导出 CSV</button>
+            <span id="actionMsg" class="status-text" hidden></span>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div>
+          <span class="kicker">说明</span>
+          <h2>怎么查</h2>
+        </div>
+        <ul class="help-list">
+          <li>纯用户名会自动补上 @gmail.com。个人 Gmail 行里 @gmail.com 后面的字符会忽略。</li>
+          <li>结果分四类：正常、异常（停用等）、未注册、错误。单次最多 200 个，每批 50 个。</li>
+          <li>列表经本站查询节点转发，不落盘、不记日志。用完请清空。</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>NX 工具箱是独立的实用页面，不是 Google 或其他厂商的官方站点。</p>
+        <p>谷歌账号检查只接受账号列表。请不要填写密码，也不要把账号发给不信任的环境。</p>
+      </div>
+    </footer>
+    <script type="module" src="./src/app.js?v=4a28cc7a15"></script>
+  </body>
+</html>

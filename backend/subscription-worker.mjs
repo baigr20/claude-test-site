@@ -1,4 +1,5 @@
 import { defaultActionStore } from './action-token.mjs'
+import { handleGmailCheck } from './gmail-check.mjs'
 import { parseSessionInput, buildResult } from '../subscription/src/query.js'
 
 const SITE_ORIGIN = 'https://claude.nx.kg'
@@ -301,7 +302,8 @@ const POST_ROUTES = {
   '/api/subscription/cancel': handleCancel,
   '/api/subscription/renew': handleRenew,
   '/api/subscription/link': handleLink,
-  '/api/action/release': handleRelease
+  '/api/action/release': handleRelease,
+  '/api/gmail/check': async (payload) => handleGmailCheck(payload)
 }
 
 export default {
