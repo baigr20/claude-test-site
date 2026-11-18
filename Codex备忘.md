@@ -9,6 +9,7 @@
 - 源目录：`D:\Desktop\强场量子光场调研与计算\量子光强场Wiki\site`
 - 仓库目录：`ql-sf/`（相对路径资源，可直接放在子目录）
 - 旧站 `/ql/wiki/` 未改。
+- 第一次推送后 `/ql-sf/` 一直 404：仓库没有 `.nojekyll`，Pages 用 Jekyll 构建；KaTeX/`book.md` 里的 `{{` 会让构建失败，于是线上仍停在旧站点。已补根目录 `.nojekyll` 再推。
 
 ## 修改文件
 
