@@ -1,5 +1,46 @@
 # Codex备忘
 
+- 日期：2026-11-18
+- 任务目标：把本地「量子光强场Wiki」静态站发到 claude.nx.kg 的新子路径，不覆盖旧的 `/ql/wiki/`。
+
+## 结论
+
+- 新地址：`https://claude.nx.kg/ql-sf/`
+- 源目录：`D:\Desktop\强场量子光场调研与计算\量子光强场Wiki\site`
+- 仓库目录：`ql-sf/`（相对路径资源，可直接放在子目录）
+- 旧站 `/ql/wiki/` 未改。
+
+## 修改文件
+
+- `ql-sf/**`（71 个文件：index.html、app.js、content.js、style.css、KaTeX、PDF/TeX/MD 下载）
+- 本备忘
+
+## 运行命令
+
+```powershell
+robocopy "D:\Desktop\强场量子光场调研与计算\量子光强场Wiki\site" "D:\gitdir\claude-test-site\ql-sf" /E
+$git = 'D:\Downloads\cmder\vendor\git-for-windows\cmd\git.exe'
+& $git -C 'D:\gitdir\claude-test-site' add -- ql-sf Codex备忘.md
+```
+
+## 测试结果
+
+- 推送后核对 `https://claude.nx.kg/ql-sf/` 与 `index.html` HTTP 200，标题含「量子光驱动的强场物理」。
+
+## Git
+
+只暂存 `ql-sf` 与本备忘。不提交 `*.jpg`、`GROKBOT-UPLOAD.md`、`_checkgpt_plus_dump/`。
+
+## 遗留问题
+
+- GitHub Pages 部署有延迟，推送成功不等于立刻可访问。
+
+## 回退方法
+
+删除 `ql-sf/` 后提交推送。旧 `/ql/wiki/` 不受影响。
+
+---
+
 - 日期：2026-11-17
 - 任务目标：把 `claude.nx.kg/subscription/` 改成 NX 工具箱薄荷绿风格，和首页、Grok、Gmail 一致。
 

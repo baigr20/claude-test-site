@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="量子光驱动的强场物理理论教材：联合动力学、量子辐射微扰和 Q 分布近似。支持知识点与整章离线阅读。">
+  <title>量子光驱动的强场物理</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/katex/katex.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="assets/katex/katex.min.js"></script>
+  <script defer src="content.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+<a class="skip" href="#article">跳到正文</a>
+<header class="topbar">
+  <button id="menu" class="icon mobile" aria-label="打开章节目录" aria-expanded="false">☰</button>
+  <a class="brand" href="#/"><span class="brand-icon">ψ</span><span>量子光 · 强场物理<small>全量子辐射理论与 Q 分布近似</small></span></a>
+  <div class="top-actions"><label class="search-label"><span>⌕</span><input id="search" type="search" placeholder="搜索知识、公式、疑问…" aria-label="搜索全部章节" autocomplete="off"><kbd>/</kbd></label><button id="theme" class="icon" aria-label="切换深色模式">◐</button></div>
+</header>
+<div id="backdrop" hidden></div>
+<aside class="sidebar" id="sidebar" aria-label="知识库章节">
+  <div class="sidebar-top"><a href="#/" class="special">封面</a><a href="#/toc" class="special">详细目录</a></div>
+  <div class="reading-progress"><span id="progress-text">阅读进度</span><progress id="progress" value="0" max="1"></progress></div>
+  <nav id="chapters"></nav>
+  <div class="sidebar-bottom"><a href="downloads/quantum-light-guide.pdf">PDF 阅读版</a><a href="downloads/main.tex" download>TeX 源文件</a><a href="downloads/book.md" download>Markdown 全文</a><small>第二版 · 2026.11.18 · 离线阅读</small></div>
+</aside>
+<main id="main"><div id="breadcrumb" class="breadcrumb"></div><article id="article" tabindex="-1"></article><footer class="page-footer">量子光驱动的强场物理 · 第二版 · <a href="#/E">参考文献与来源说明</a></footer></main>
+<aside class="toc" aria-label="本页目录"><div class="toc-label">在这一页</div><nav id="toc"></nav><a class="toc-top" href="#article">↑ 回到正文顶部</a></aside>
+<div class="search-panel" id="search-panel" role="region" aria-label="搜索结果" hidden></div>
+<div id="toast" role="status"></div>
+<noscript>本知识库的章节导航需要 JavaScript。也可直接打开 downloads/quantum-light-guide.pdf 阅读完整教程。</noscript>
+</body>
+</html>
